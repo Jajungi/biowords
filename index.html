@@ -3,30 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioMaster Pro V6 - Ultimate Learning</title>
+    <title>BioMaster Pro V6 - Persistent Storage</title>
     <style>
         :root {
-            --primary: #27ae60;
-            --secondary: #2c3e50;
-            --danger: #e74c3c;
-            --accent: #3498db;
-            --star: #f1c40f;
-            --bg: #f4f7f6;
+            --primary: #27ae60; --secondary: #2c3e50; --danger: #e74c3c;
+            --accent: #3498db; --star: #f1c40f; --bg: #f4f7f6;
         }
         body { font-family: 'Pretendard', sans-serif; margin: 0; background: var(--bg); color: #333; line-height: 1.5; }
-        
-        nav { background: var(--secondary); display: flex; justify-content: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .nav-item { padding: 15px 20px; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 0.95rem; }
-        .nav-item:hover { background: #34495e; }
+        nav { background: var(--secondary); display: flex; justify-content: center; position: sticky; top: 0; z-index: 1000; }
+        .nav-item { padding: 15px 20px; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .nav-item.active { background: var(--primary); }
-
         .container { max-width: 900px; margin: 30px auto; padding: 20px; }
         .page { display: none; background: white; padding: 35px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .page.active { display: block; animation: fadeIn 0.4s; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Dictionary & Star Styles */
         .chapter-box { border: 1px solid #edf2f7; margin-bottom: 12px; border-radius: 12px; overflow: hidden; }
         .chapter-btn { width: 100%; padding: 18px; text-align: left; background: #fff; border: none; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; font-size: 1.1rem; color: var(--secondary); }
         .word-list { display: none; padding: 0 20px 20px; background: #fff; }
@@ -37,23 +27,18 @@
         .star-icon { cursor: pointer; font-size: 1.4rem; color: #ddd; transition: 0.2s; user-select: none; }
         .star-icon.active { color: var(--star); }
         .word-row small { color: #4a5568; display: block; margin-top: 5px; font-size: 0.95rem; line-height: 1.5; }
-
-        /* Quiz UI */
-        .quiz-question { font-size: 1.3rem; font-weight: 600; margin: 25px 0; min-height: 110px; line-height: 1.6; color: #1a202c; }
+        .quiz-question { font-size: 1.3rem; font-weight: 600; margin: 25px 0; min-height: 110px; color: #1a202c; }
         input[type="text"] { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1.1rem; outline: none; box-sizing: border-box; }
         .feedback { margin: 20px 0; padding: 15px; border-radius: 10px; display: none; font-weight: bold; }
         .feedback.correct { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
         .feedback.wrong { display: block; background: #fff5f5; color: #9b2c2c; border: 1px solid #fed7d7; }
-
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #e2e8f0; padding: 14px; text-align: left; }
         th { background: #f8fafc; font-size: 0.85rem; color: #718096; }
-
         .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; width: 100%; margin-top: 10px; }
         .btn-stop { background: white; color: var(--danger); border: 2px solid var(--danger); }
         .btn-accent { background: var(--accent); color: white; width: 100%; margin-top: 10px; }
-        
         .hidden { display: none; }
     </style>
 </head>
@@ -68,35 +53,31 @@
 
 <div class="container">
     <div id="vocab-page" class="page active">
-        <h2 style="color:var(--primary)">🌿 Detailed Biology Dictionary</h2>
+        <h2 style="color:var(--primary)">🌿 Biology Dictionary</h2>
         <div id="vocab-content"></div>
     </div>
-
     <div id="star-page" class="page">
-        <h2>⭐ Hard Words (Favorites)</h2>
-        <p style="font-size:0.9rem; color:#666;">별표를 눌렀거나 3회 연속 틀려 자동으로 추가된 어려운 단어들입니다.</p>
+        <h2>⭐ Hard Words</h2>
         <div id="star-content"></div>
     </div>
-
     <div id="quiz-page" class="page">
         <div id="quiz-setup">
             <h2>🧠 Quiz Setup</h2>
             <div id="chapter-select-area" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px; margin:20px 0;"></div>
-            <button class="btn btn-primary" onclick="initQuiz(false)">퀴즈 시작</button>
+            <button class="btn btn-primary" onclick="initQuiz(false)">시작하기</button>
         </div>
         <div id="quiz-run" style="display:none;">
             <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-                <span id="progress-text" style="font-weight:bold; color:var(--secondary)">Problem 1</span>
+                <span id="progress-text" style="font-weight:bold">Problem 1</span>
                 <button class="btn btn-stop" style="padding:5px 10px" onclick="stopQuiz()">중단 & 저장</button>
             </div>
             <div class="quiz-question" id="q-text"></div>
-            <input type="text" id="user-answer" placeholder="영단어 입력..." autocomplete="off">
+            <input type="text" id="user-answer" placeholder="정답 입력..." autocomplete="off">
             <div id="feedback-area" class="feedback"></div>
-            <button id="submit-btn" class="btn btn-primary" style="margin-top:20px" onclick="checkAnswer()">확인 (Enter)</button>
-            <button id="next-btn" class="btn btn-primary" style="display:none; background:var(--secondary); margin-top:20px" onclick="nextQuestion()">다음 문제 ▶</button>
+            <button id="submit-btn" class="btn btn-primary" style="margin-top:20px" onclick="checkAnswer()">확인</button>
+            <button id="next-btn" class="btn btn-primary" style="display:none; background:var(--secondary); margin-top:20px" onclick="nextQuestion()">다음 ▶</button>
         </div>
     </div>
-
     <div id="review-page" class="page">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h2>❌ Review Note</h2>
@@ -266,18 +247,29 @@ const data = {
 };
 
 
+// 💾 저장 관련 수정된 변수 선언
 let quizList = [];
 let currentIdx = 0;
-let wrongNotes = [];
-let starWords = []; // ⭐ 별표 단어 저장소
-let errorHistory = {}; // 단어별 연속 오답 횟수 추적
+let wrongNotes = JSON.parse(localStorage.getItem('bio_wrongNotes')) || [];
+let starWords = JSON.parse(localStorage.getItem('bio_starWords')) || [];
+let errorHistory = {}; 
 let isReviewQuiz = false;
+
+// 💾 로컬 스토리지 저장 함수
+function saveToLocal() {
+    localStorage.setItem('bio_wrongNotes', JSON.stringify(wrongNotes));
+    localStorage.setItem('bio_starWords', JSON.stringify(starWords));
+}
 
 function init() {
     const vocabBox = document.getElementById('vocab-content');
     const selectBox = document.getElementById('chapter-select-area');
+    
+    // 초기 뱃지 숫자 로드
+    updateReviewCount();
+    document.getElementById('nav-star').textContent = `⭐ (${starWords.length})`;
+
     for (let chapter in data) {
-        // 단어장 생성
         const div = document.createElement('div');
         div.className = 'chapter-box';
         div.innerHTML = `<button class="chapter-btn" onclick="this.nextElementSibling.classList.toggle('open')">${chapter} <span>▼</span></button>
@@ -285,17 +277,15 @@ function init() {
                 <div class="word-row">
                     <div class="word-header">
                         <b>${w}</b>
-                        <span class="star-icon" onclick="toggleStar('${w}')" id="star-${w.replace(/\s+/g, '')}">★</span>
+                        <span class="star-icon ${starWords.includes(w) ? 'active' : ''}" onclick="toggleStar('${w}')" id="star-${w.replace(/\s+/g, '')}">★</span>
                     </div>
                     <small>${d}</small>
                 </div>`).join('')}</div>`;
         vocabBox.appendChild(div);
-        // 퀴즈 선택 체크박스
         const label = document.createElement('label');
         label.innerHTML = `<input type="checkbox" class="chap-chk" value="${chapter}"> ${chapter}`;
         selectBox.appendChild(label);
     }
-    // Enter 키 바인딩
     document.getElementById('user-answer').addEventListener('keypress', (e) => { 
         if(e.key === 'Enter') (document.getElementById('submit-btn').style.display !== 'none') ? checkAnswer() : nextQuestion();
     });
@@ -310,21 +300,18 @@ function showPage(id, el) {
     if(id === 'review-page') updateReviewPage();
 }
 
-// ⭐ 별표 토글
 function toggleStar(word) {
     const idx = starWords.indexOf(word);
-    if (idx === -1) {
-        starWords.push(word);
-    } else {
-        starWords.splice(idx, 1);
-    }
+    if (idx === -1) starWords.push(word);
+    else starWords.splice(idx, 1);
+    
+    saveToLocal(); // ⭐ 로컬 저장
     updateStarUI(word);
     document.getElementById('nav-star').textContent = `⭐ (${starWords.length})`;
     if(document.getElementById('star-page').classList.contains('active')) renderStars();
 }
 
 function updateStarUI(word) {
-    // Dictionary와 Star 페이지 양쪽의 별 아이콘 업데이트
     const stars = document.querySelectorAll(`[id="star-${word.replace(/\s+/g, '')}"]`);
     stars.forEach(s => {
         if (starWords.includes(word)) s.classList.add('active');
@@ -334,30 +321,19 @@ function updateStarUI(word) {
 
 function renderStars() {
     const container = document.getElementById('star-content');
-    if (starWords.length === 0) {
-        container.innerHTML = "<p style='text-align:center; padding:50px; color:#999;'>추가된 단어가 없습니다.</p>";
-        return;
-    }
+    if (!starWords.length) return container.innerHTML = "<p style='text-align:center; padding:50px; color:#999;'>별표된 단어가 없습니다.</p>";
     let html = "";
     starWords.forEach(word => {
-        let definition = "정의를 찾을 수 없습니다.";
-        for (let ch in data) { if(data[ch][word]) definition = data[ch][word]; }
-        html += `<div class="word-row">
-                    <div class="word-header">
-                        <b>${word}</b>
-                        <span class="star-icon active" onclick="toggleStar('${word}')" id="star-${word.replace(/\s+/g, '')}">★</span>
-                    </div>
-                    <small>${definition}</small>
-                </div>`;
+        let def = ""; for (let ch in data) { if(data[ch][word]) def = data[ch][word]; }
+        html += `<div class="word-row"><b>${word}</b><span class="star-icon active" onclick="toggleStar('${word}')">★</span><br><small>${def}</small></div>`;
     });
     container.innerHTML = html;
 }
 
-// 퀴즈 시스템
 function initQuiz(fromReview = false) {
     isReviewQuiz = fromReview;
     if (fromReview) {
-        if (wrongNotes.length === 0) return alert("틀린 문제가 없습니다!");
+        if (!wrongNotes.length) return alert("틀린 문제가 없습니다!");
         quizList = wrongNotes.map(n => ({ q: n.q, a: n.a, ch: n.ch }));
     } else {
         const selected = Array.from(document.querySelectorAll('.chap-chk:checked')).map(c => c.value);
@@ -395,22 +371,22 @@ function checkAnswer() {
     if (userAns === realAns) {
         feedback.textContent = "Correct! ✨";
         feedback.className = "feedback correct";
-        errorHistory[realWord] = 0; // 맞히면 오답 횟수 초기화
-        if(isReviewQuiz) wrongNotes = wrongNotes.filter(n => n.a.toLowerCase() !== realAns);
+        errorHistory[realWord] = 0;
+        if(isReviewQuiz) { 
+            wrongNotes = wrongNotes.filter(n => n.a.toLowerCase() !== realAns);
+            saveToLocal(); // 💾 복습 성공 시 저장
+        }
     } else {
         feedback.innerHTML = `Wrong! ❌ Answer: <b>${realWord}</b>`;
         feedback.className = "feedback wrong";
-        
-        // 오답 노트 등록
         if (!wrongNotes.some(n => n.a === realWord)) {
             wrongNotes.push({ ch: quizList[currentIdx].ch, q: quizList[currentIdx].q, a: realWord, u: userAns || "(None)" });
+            saveToLocal(); // 💾 오답 발생 시 저장
         }
-        
-        // 🔥 누적 3회 연속 오답 체크
         errorHistory[realWord] = (errorHistory[realWord] || 0) + 1;
         if (errorHistory[realWord] >= 3 && !starWords.includes(realWord)) {
             toggleStar(realWord);
-            feedback.innerHTML += `<br><span style="color:var(--star); font-size:0.85rem">⚠️ 3회 연속 오답으로 ⭐ 목록에 자동 추가됨!</span>`;
+            feedback.innerHTML += `<br><span style="color:var(--star); font-size:0.8rem">⚠️ 3회 오답으로 ⭐ 추가됨!</span>`;
         }
     }
     updateReviewCount();
@@ -420,31 +396,27 @@ function checkAnswer() {
 }
 
 function nextQuestion() { currentIdx++; renderQuestion(); }
-function stopQuiz() { if(confirm("중단하고 지금까지의 오답을 저장할까요?")) finishQuiz(); }
+function stopQuiz() { if(confirm("중단하고 결과를 저장할까요?")) finishQuiz(); }
 function finishQuiz() {
     updateReviewPage();
-    alert("퀴즈가 종료되었습니다.");
     showPage('review-page', document.getElementById('nav-review'));
     document.getElementById('quiz-run').style.display = 'none';
     document.getElementById('quiz-setup').style.display = 'block';
 }
-
 function updateReviewCount() { document.getElementById('nav-review').textContent = `❌ (${wrongNotes.length})`; }
 function updateReviewPage() {
     const container = document.getElementById('review-content');
     const actions = document.getElementById('review-actions');
     if (!wrongNotes.length) {
         container.innerHTML = "<p style='text-align:center; padding:50px; color:#999;'>기록된 오답이 없습니다.</p>";
-        actions.classList.add('hidden');
-        return;
+        actions.classList.add('hidden'); return;
     }
     actions.classList.remove('hidden');
-    let html = `<table><tr><th>Chapter</th><th>Question</th><th>Correct Answer</th></tr>`;
-    wrongNotes.forEach(n => { html += `<tr><td>${n.ch}</td><td><small>${n.q}</small></td><td><b style="color:var(--primary)">${n.a}</b></td></tr>`; });
+    let html = `<table><tr><th>Chapter</th><th>Question</th><th>Answer</th></tr>`;
+    wrongNotes.forEach(n => { html += `<tr><td>${n.ch}</td><td><small>${n.q}</small></td><td><b>${n.a}</b></td></tr>`; });
     container.innerHTML = html + `</table>`;
 }
-
-function clearWrongNotes() { if(confirm("오답 노트를 초기화하시겠습니까?")) { wrongNotes = []; updateReviewCount(); updateReviewPage(); } }
+function clearWrongNotes() { if(confirm("초기화할까요?")) { wrongNotes = []; saveToLocal(); updateReviewCount(); updateReviewPage(); } }
 
 init();
 </script>
