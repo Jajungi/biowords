@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioMaster Pro V5 - Ultimate Edition</title>
+    <title>BioMaster Pro V6 - Ultimate Learning</title>
     <style>
         :root {
             --primary: #27ae60;
             --secondary: #2c3e50;
             --danger: #e74c3c;
             --accent: #3498db;
+            --star: #f1c40f;
             --bg: #f4f7f6;
         }
         body { font-family: 'Pretendard', sans-serif; margin: 0; background: var(--bg); color: #333; line-height: 1.5; }
         
         nav { background: var(--secondary); display: flex; justify-content: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .nav-item { padding: 15px 25px; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .nav-item { padding: 15px 20px; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 0.95rem; }
         .nav-item:hover { background: #34495e; }
         .nav-item.active { background: var(--primary); }
 
@@ -25,85 +26,86 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Dictionary & Star Styles */
         .chapter-box { border: 1px solid #edf2f7; margin-bottom: 12px; border-radius: 12px; overflow: hidden; }
         .chapter-btn { width: 100%; padding: 18px; text-align: left; background: #fff; border: none; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; font-size: 1.1rem; color: var(--secondary); }
         .word-list { display: none; padding: 0 20px 20px; background: #fff; }
         .word-list.open { display: block; border-top: 1px solid #edf2f7; }
-        .word-row { padding: 15px 0; border-bottom: 1px solid #f1f5f9; }
-        .word-row b { color: var(--primary); font-size: 1.15rem; display: block; margin-bottom: 4px; }
-        .word-row small { color: #4a5568; display: block; line-height: 1.5; font-size: 0.95rem; }
+        .word-row { padding: 15px 0; border-bottom: 1px solid #f1f5f9; position: relative; }
+        .word-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .word-row b { color: var(--primary); font-size: 1.15rem; }
+        .star-icon { cursor: pointer; font-size: 1.4rem; color: #ddd; transition: 0.2s; user-select: none; }
+        .star-icon.active { color: var(--star); }
+        .word-row small { color: #4a5568; display: block; margin-top: 5px; font-size: 0.95rem; line-height: 1.5; }
 
-        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
-        .quiz-question { font-size: 1.3rem; font-weight: 600; margin: 25px 0; min-height: 110px; color: #1a202c; line-height: 1.6; }
-        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; outline: none; transition: 0.2s; }
-        input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1); }
-        
+        /* Quiz UI */
+        .quiz-question { font-size: 1.3rem; font-weight: 600; margin: 25px 0; min-height: 110px; line-height: 1.6; color: #1a202c; }
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1.1rem; outline: none; box-sizing: border-box; }
         .feedback { margin: 20px 0; padding: 15px; border-radius: 10px; display: none; font-weight: bold; }
         .feedback.correct { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
         .feedback.wrong { display: block; background: #fff5f5; color: #9b2c2c; border: 1px solid #fed7d7; }
 
-        .table-wrapper { overflow-x: auto; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #e2e8f0; padding: 14px; text-align: left; }
-        th { background: #f8fafc; font-size: 0.9rem; color: #718096; }
+        th { background: #f8fafc; font-size: 0.85rem; color: #718096; }
 
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 1rem; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; width: 100%; margin-top: 10px; }
         .btn-stop { background: white; color: var(--danger); border: 2px solid var(--danger); }
         .btn-accent { background: var(--accent); color: white; width: 100%; margin-top: 10px; }
-        .btn-danger { background: var(--danger); color: white; }
-
+        
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="nav-item active" onclick="showPage('vocab-page', this)">Dictionary</div>
-    <div class="nav-item" onclick="showPage('quiz-page', this)">Live Quiz</div>
-    <div id="nav-review" class="nav-item" onclick="showPage('review-page', this)">Review (0)</div>
+    <div class="nav-item active" onclick="showPage('vocab-page', this)">📖 Dictionary</div>
+    <div id="nav-star" class="nav-item" onclick="showPage('star-page', this)">⭐ (0)</div>
+    <div class="nav-item" onclick="showPage('quiz-page', this)">🧠 Quiz</div>
+    <div id="nav-review" class="nav-item" onclick="showPage('review-page', this)">❌ (0)</div>
 </nav>
 
 <div class="container">
     <div id="vocab-page" class="page active">
-        <h2 style="color:var(--primary)">🌿 Biology Dictionary (Advanced)</h2>
+        <h2 style="color:var(--primary)">🌿 Detailed Biology Dictionary</h2>
         <div id="vocab-content"></div>
+    </div>
+
+    <div id="star-page" class="page">
+        <h2>⭐ Hard Words (Favorites)</h2>
+        <p style="font-size:0.9rem; color:#666;">별표를 눌렀거나 3회 연속 틀려 자동으로 추가된 어려운 단어들입니다.</p>
+        <div id="star-content"></div>
     </div>
 
     <div id="quiz-page" class="page">
         <div id="quiz-setup">
             <h2>🧠 Quiz Setup</h2>
-            <p>테스트할 단원을 선택하세요:</p>
             <div id="chapter-select-area" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px; margin:20px 0;"></div>
-            <button class="btn btn-primary" onclick="initQuiz(false)">선택 단원 퀴즈 시작</button>
+            <button class="btn btn-primary" onclick="initQuiz(false)">퀴즈 시작</button>
         </div>
-
         <div id="quiz-run" style="display:none;">
-            <div class="quiz-header">
-                <span id="progress-text" style="font-weight:bold; color:var(--secondary)">Problem 1 / 10</span>
-                <button class="btn btn-stop" onclick="stopQuiz()">퀴즈 중단 & 오답 저장</button>
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <span id="progress-text" style="font-weight:bold; color:var(--secondary)">Problem 1</span>
+                <button class="btn btn-stop" style="padding:5px 10px" onclick="stopQuiz()">중단 & 저장</button>
             </div>
             <div class="quiz-question" id="q-text"></div>
-            <input type="text" id="user-answer" placeholder="영단어를 입력하세요..." autocomplete="off">
+            <input type="text" id="user-answer" placeholder="영단어 입력..." autocomplete="off">
             <div id="feedback-area" class="feedback"></div>
-            <button id="submit-btn" class="btn btn-primary" onclick="checkAnswer()">정답 확인 (Enter)</button>
-            <button id="next-btn" class="btn btn-primary" style="display:none; background:var(--secondary);" onclick="nextQuestion()">다음 문제 ▶</button>
+            <button id="submit-btn" class="btn btn-primary" style="margin-top:20px" onclick="checkAnswer()">확인 (Enter)</button>
+            <button id="next-btn" class="btn btn-primary" style="display:none; background:var(--secondary); margin-top:20px" onclick="nextQuestion()">다음 문제 ▶</button>
         </div>
     </div>
 
     <div id="review-page" class="page">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0">❌ Incorrect Notes</h2>
-            <button class="btn btn-danger" onclick="clearWrongNotes()">초기화</button>
+            <h2>❌ Review Note</h2>
+            <button onclick="clearWrongNotes()" class="btn" style="background:var(--danger); color:white; padding:8px 15px">초기화</button>
         </div>
-        
         <div id="review-actions" class="hidden">
-            <button class="btn btn-accent" onclick="initQuiz(true)">🔥 오답들만 모아서 다시 퀴즈 풀기</button>
+            <button class="btn btn-accent" onclick="initQuiz(true)">틀린 문제만 다시 풀기</button>
         </div>
-
-        <div id="review-content" class="table-wrapper">
-            <p style="text-align:center; padding:50px; color:#999;">틀린 문제가 없습니다.</p>
-        </div>
+        <div id="review-content"></div>
     </div>
 </div>
 
@@ -263,29 +265,39 @@ const data = {
     }
 };
 
+
 let quizList = [];
 let currentIdx = 0;
 let wrongNotes = [];
+let starWords = []; // ⭐ 별표 단어 저장소
+let errorHistory = {}; // 단어별 연속 오답 횟수 추적
 let isReviewQuiz = false;
 
 function init() {
     const vocabBox = document.getElementById('vocab-content');
     const selectBox = document.getElementById('chapter-select-area');
     for (let chapter in data) {
+        // 단어장 생성
         const div = document.createElement('div');
         div.className = 'chapter-box';
         div.innerHTML = `<button class="chapter-btn" onclick="this.nextElementSibling.classList.toggle('open')">${chapter} <span>▼</span></button>
-            <div class="word-list">${Object.entries(data[chapter]).map(([w, d]) => `<div class="word-row"><b>${w}</b><small>${d}</small></div>`).join('')}</div>`;
+            <div class="word-list">${Object.entries(data[chapter]).map(([w, d]) => `
+                <div class="word-row">
+                    <div class="word-header">
+                        <b>${w}</b>
+                        <span class="star-icon" onclick="toggleStar('${w}')" id="star-${w.replace(/\s+/g, '')}">★</span>
+                    </div>
+                    <small>${d}</small>
+                </div>`).join('')}</div>`;
         vocabBox.appendChild(div);
+        // 퀴즈 선택 체크박스
         const label = document.createElement('label');
         label.innerHTML = `<input type="checkbox" class="chap-chk" value="${chapter}"> ${chapter}`;
         selectBox.appendChild(label);
     }
+    // Enter 키 바인딩
     document.getElementById('user-answer').addEventListener('keypress', (e) => { 
-        if(e.key === 'Enter') {
-            if(document.getElementById('submit-btn').style.display !== 'none') checkAnswer();
-            else nextQuestion();
-        }
+        if(e.key === 'Enter') (document.getElementById('submit-btn').style.display !== 'none') ? checkAnswer() : nextQuestion();
     });
 }
 
@@ -294,22 +306,65 @@ function showPage(id, el) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if(el) el.classList.add('active');
+    if(id === 'star-page') renderStars();
     if(id === 'review-page') updateReviewPage();
 }
 
+// ⭐ 별표 토글
+function toggleStar(word) {
+    const idx = starWords.indexOf(word);
+    if (idx === -1) {
+        starWords.push(word);
+    } else {
+        starWords.splice(idx, 1);
+    }
+    updateStarUI(word);
+    document.getElementById('nav-star').textContent = `⭐ (${starWords.length})`;
+    if(document.getElementById('star-page').classList.contains('active')) renderStars();
+}
+
+function updateStarUI(word) {
+    // Dictionary와 Star 페이지 양쪽의 별 아이콘 업데이트
+    const stars = document.querySelectorAll(`[id="star-${word.replace(/\s+/g, '')}"]`);
+    stars.forEach(s => {
+        if (starWords.includes(word)) s.classList.add('active');
+        else s.classList.remove('active');
+    });
+}
+
+function renderStars() {
+    const container = document.getElementById('star-content');
+    if (starWords.length === 0) {
+        container.innerHTML = "<p style='text-align:center; padding:50px; color:#999;'>추가된 단어가 없습니다.</p>";
+        return;
+    }
+    let html = "";
+    starWords.forEach(word => {
+        let definition = "정의를 찾을 수 없습니다.";
+        for (let ch in data) { if(data[ch][word]) definition = data[ch][word]; }
+        html += `<div class="word-row">
+                    <div class="word-header">
+                        <b>${word}</b>
+                        <span class="star-icon active" onclick="toggleStar('${word}')" id="star-${word.replace(/\s+/g, '')}">★</span>
+                    </div>
+                    <small>${definition}</small>
+                </div>`;
+    });
+    container.innerHTML = html;
+}
+
+// 퀴즈 시스템
 function initQuiz(fromReview = false) {
     isReviewQuiz = fromReview;
     if (fromReview) {
         if (wrongNotes.length === 0) return alert("틀린 문제가 없습니다!");
         quizList = wrongNotes.map(n => ({ q: n.q, a: n.a, ch: n.ch }));
-        showPage('quiz-page', document.querySelectorAll('.nav-item')[1]);
     } else {
         const selected = Array.from(document.querySelectorAll('.chap-chk:checked')).map(c => c.value);
-        if (!selected.length) return alert("단원을 선택해주세요!");
+        if (!selected.length) return alert("단원을 선택하세요!");
         quizList = [];
         selected.forEach(ch => { for (let word in data[ch]) quizList.push({ q: data[ch][word], a: word, ch: ch }); });
     }
-    
     quizList.sort(() => Math.random() - 0.5);
     currentIdx = 0;
     document.getElementById('quiz-setup').style.display = 'none';
@@ -320,7 +375,7 @@ function initQuiz(fromReview = false) {
 function renderQuestion() {
     if (currentIdx >= quizList.length) return finishQuiz();
     const item = quizList[currentIdx];
-    document.getElementById('progress-text').textContent = (isReviewQuiz ? "[오답 복습] " : "") + `Problem ${currentIdx + 1} / ${quizList.length}`;
+    document.getElementById('progress-text').textContent = (isReviewQuiz ? "[복습] " : "") + `Problem ${currentIdx + 1} / ${quizList.length}`;
     document.getElementById('q-text').textContent = item.q;
     document.getElementById('user-answer').value = "";
     document.getElementById('user-answer').disabled = false;
@@ -332,21 +387,30 @@ function renderQuestion() {
 
 function checkAnswer() {
     const userAns = document.getElementById('user-answer').value.trim().toLowerCase();
-    const realAns = quizList[currentIdx].a.toLowerCase();
+    const realWord = quizList[currentIdx].a;
+    const realAns = realWord.toLowerCase();
     const feedback = document.getElementById('feedback-area');
     feedback.style.display = 'block';
 
     if (userAns === realAns) {
         feedback.textContent = "Correct! ✨";
         feedback.className = "feedback correct";
-        if(isReviewQuiz) {
-            wrongNotes = wrongNotes.filter(n => n.a.toLowerCase() !== realAns);
-        }
+        errorHistory[realWord] = 0; // 맞히면 오답 횟수 초기화
+        if(isReviewQuiz) wrongNotes = wrongNotes.filter(n => n.a.toLowerCase() !== realAns);
     } else {
-        feedback.innerHTML = `Wrong! ❌ Answer: <b>${quizList[currentIdx].a}</b>`;
+        feedback.innerHTML = `Wrong! ❌ Answer: <b>${realWord}</b>`;
         feedback.className = "feedback wrong";
-        if (!wrongNotes.some(n => n.a.toLowerCase() === realAns)) {
-            wrongNotes.push({ ch: quizList[currentIdx].ch, q: quizList[currentIdx].q, a: quizList[currentIdx].a, u: userAns || "(None)" });
+        
+        // 오답 노트 등록
+        if (!wrongNotes.some(n => n.a === realWord)) {
+            wrongNotes.push({ ch: quizList[currentIdx].ch, q: quizList[currentIdx].q, a: realWord, u: userAns || "(None)" });
+        }
+        
+        // 🔥 누적 3회 연속 오답 체크
+        errorHistory[realWord] = (errorHistory[realWord] || 0) + 1;
+        if (errorHistory[realWord] >= 3 && !starWords.includes(realWord)) {
+            toggleStar(realWord);
+            feedback.innerHTML += `<br><span style="color:var(--star); font-size:0.85rem">⚠️ 3회 연속 오답으로 ⭐ 목록에 자동 추가됨!</span>`;
         }
     }
     updateReviewCount();
@@ -356,46 +420,31 @@ function checkAnswer() {
 }
 
 function nextQuestion() { currentIdx++; renderQuestion(); }
-
-function stopQuiz() {
-    if(confirm("현재까지 틀린 문제를 저장하고 퀴즈를 중단할까요?")) finishQuiz();
-}
-
+function stopQuiz() { if(confirm("중단하고 지금까지의 오답을 저장할까요?")) finishQuiz(); }
 function finishQuiz() {
     updateReviewPage();
-    alert(isReviewQuiz ? "오답 복습 완료!" : "퀴즈 완료!");
+    alert("퀴즈가 종료되었습니다.");
     showPage('review-page', document.getElementById('nav-review'));
     document.getElementById('quiz-run').style.display = 'none';
     document.getElementById('quiz-setup').style.display = 'block';
 }
 
-function updateReviewCount() { 
-    document.getElementById('nav-review').textContent = `Review (${wrongNotes.length})`; 
-}
-
+function updateReviewCount() { document.getElementById('nav-review').textContent = `❌ (${wrongNotes.length})`; }
 function updateReviewPage() {
     const container = document.getElementById('review-content');
     const actions = document.getElementById('review-actions');
     if (!wrongNotes.length) {
-        container.innerHTML = "<p style='text-align:center; padding:50px; color:#999;'>틀린 문제가 없습니다. 완벽해요! 🎉</p>";
+        container.innerHTML = "<p style='text-align:center; padding:50px; color:#999;'>기록된 오답이 없습니다.</p>";
         actions.classList.add('hidden');
         return;
     }
     actions.classList.remove('hidden');
-    let html = `<table><tr><th>Chapter</th><th>Question</th><th>Your Ans</th><th>Correct</th></tr>`;
-    wrongNotes.forEach(n => { 
-        html += `<tr><td>${n.ch}</td><td><small>${n.q}</small></td><td style="color:var(--danger)">${n.u}</td><td style="color:var(--primary)"><b>${n.a}</b></td></tr>`; 
-    });
+    let html = `<table><tr><th>Chapter</th><th>Question</th><th>Correct Answer</th></tr>`;
+    wrongNotes.forEach(n => { html += `<tr><td>${n.ch}</td><td><small>${n.q}</small></td><td><b style="color:var(--primary)">${n.a}</b></td></tr>`; });
     container.innerHTML = html + `</table>`;
 }
 
-function clearWrongNotes() {
-    if(confirm("오답 노트를 초기화하시겠습니까?")) {
-        wrongNotes = [];
-        updateReviewCount();
-        updateReviewPage();
-    }
-}
+function clearWrongNotes() { if(confirm("오답 노트를 초기화하시겠습니까?")) { wrongNotes = []; updateReviewCount(); updateReviewPage(); } }
 
 init();
 </script>
