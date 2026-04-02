@@ -329,22 +329,33 @@ function renderStars() {
     });
     container.innerHTML = html;
 }
-
+    
 function initQuiz(fromReview = false) {
     isReviewQuiz = fromReview;
     if (fromReview) {
-        if (!wrongNotes.length) return alert("틀린 문제가 없습니다!");
+        if (!wrongNotes || wrongNotes.length === 0) return alert("틀린 문제가 없습니다!");
+        // 오답 리스트를 퀴즈용으로 변환
         quizList = wrongNotes.map(n => ({ q: n.q, a: n.a, ch: n.ch }));
+        
+        // [추가] 오답 노지에서 실행 시 퀴즈 페이지로 이동시키고 UI 초기화
+        const quizNavLink = document.querySelectorAll('.nav-item')[2]; // 🧠 Quiz 메뉴
+        showPage('quiz-page', quizNavLink);
     } else {
         const selected = Array.from(document.querySelectorAll('.chap-chk:checked')).map(c => c.value);
         if (!selected.length) return alert("단원을 선택하세요!");
         quizList = [];
-        selected.forEach(ch => { for (let word in data[ch]) quizList.push({ q: data[ch][word], a: word, ch: ch }); });
+        selected.forEach(ch => { 
+            for (let word in data[ch]) quizList.push({ q: data[ch][word], a: word, ch: ch }); 
+        });
     }
+    
     quizList.sort(() => Math.random() - 0.5);
     currentIdx = 0;
+
+    // [중요] 설정창을 숨기고 퀴즈 실행창을 보임
     document.getElementById('quiz-setup').style.display = 'none';
     document.getElementById('quiz-run').style.display = 'block';
+    
     renderQuestion();
 }
 
