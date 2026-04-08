@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioMaster Pro V6 - Persistent Storage</title>
+    <title>BioMaster Pro V6 - Persistent Storage & Search</title>
     <style>
         :root {
             --primary: #27ae60; --secondary: #2c3e50; --danger: #e74c3c;
@@ -17,6 +17,9 @@
         .page { display: none; background: white; padding: 35px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .page.active { display: block; animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .search-box { margin-bottom: 20px; }
+        
         .chapter-box { border: 1px solid #edf2f7; margin-bottom: 12px; border-radius: 12px; overflow: hidden; }
         .chapter-btn { width: 100%; padding: 18px; text-align: left; background: #fff; border: none; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; font-size: 1.1rem; color: var(--secondary); }
         .word-list { display: none; padding: 0 20px 20px; background: #fff; }
@@ -27,8 +30,11 @@
         .star-icon { cursor: pointer; font-size: 1.4rem; color: #ddd; transition: 0.2s; user-select: none; }
         .star-icon.active { color: var(--star); }
         .word-row small { color: #4a5568; display: block; margin-top: 5px; font-size: 0.95rem; line-height: 1.5; }
+        
         .quiz-question { font-size: 1.3rem; font-weight: 600; margin: 25px 0; min-height: 110px; color: #1a202c; }
-        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1.1rem; outline: none; box-sizing: border-box; }
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1.1rem; outline: none; box-sizing: border-box; transition: 0.2s; }
+        input[type="text"]:focus { border-color: var(--primary); }
+        
         .feedback { margin: 20px 0; padding: 15px; border-radius: 10px; display: none; font-weight: bold; }
         .feedback.correct { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
         .feedback.wrong { display: block; background: #fff5f5; color: #9b2c2c; border: 1px solid #fed7d7; }
@@ -54,12 +60,17 @@
 <div class="container">
     <div id="vocab-page" class="page active">
         <h2 style="color:var(--primary)">🌿 Biology Dictionary</h2>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="🔍 영단어 또는 뜻을 검색해보세요..." oninput="searchDictionary()">
+        </div>
         <div id="vocab-content"></div>
     </div>
+    
     <div id="star-page" class="page">
         <h2>⭐ Hard Words</h2>
         <div id="star-content"></div>
     </div>
+    
     <div id="quiz-page" class="page">
         <div id="quiz-setup">
             <h2>🧠 Quiz Setup</h2>
@@ -78,6 +89,7 @@
             <button id="next-btn" class="btn btn-primary" style="display:none; background:var(--secondary); margin-top:20px" onclick="nextQuestion()">다음 ▶</button>
         </div>
     </div>
+    
     <div id="review-page" class="page">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h2>❌ Review Note</h2>
@@ -246,8 +258,6 @@ const data = {
     }
 };
 
-
-
 // 💾 저장 관련 수정된 변수 선언
 let quizList = [];
 let currentIdx = 0;
@@ -292,6 +302,44 @@ function init() {
     });
 }
 
+// 🔍 검색 함수 추가
+function searchDictionary() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const chapters = document.querySelectorAll('#vocab-content .chapter-box');
+
+    chapters.forEach(chapter => {
+        const wordRows = chapter.querySelectorAll('.word-row');
+        let hasMatch = false;
+
+        wordRows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            if (text.includes(query)) {
+                row.style.display = 'block';
+                hasMatch = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const wordList = chapter.querySelector('.word-list');
+        
+        // 검색어가 있을 경우
+        if (query.trim() !== '') {
+            if (hasMatch) {
+                chapter.style.display = 'block';
+                wordList.classList.add('open'); // 일치하는 단어가 있으면 챕터 펼치기
+            } else {
+                chapter.style.display = 'none'; // 일치하는 게 없으면 챕터 숨기기
+            }
+        } else {
+            // 검색어가 없을 경우 (초기화)
+            chapter.style.display = 'block';
+            wordList.classList.remove('open');
+            wordRows.forEach(row => row.style.display = 'block');
+        }
+    });
+}
+
 function showPage(id, el) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -326,7 +374,13 @@ function renderStars() {
     let html = "";
     starWords.forEach(word => {
         let def = ""; for (let ch in data) { if(data[ch][word]) def = data[ch][word]; }
-        html += `<div class="word-row"><b>${word}</b><span class="star-icon active" onclick="toggleStar('${word}')">★</span><br><small>${def}</small></div>`;
+        html += `<div class="word-row">
+                    <div class="word-header">
+                        <b>${word}</b>
+                        <span class="star-icon active" onclick="toggleStar('${word}')">★</span>
+                    </div>
+                    <small>${def}</small>
+                </div>`;
     });
     container.innerHTML = html;
 }
@@ -338,7 +392,6 @@ function initQuiz(fromReview = false) {
         // 오답 리스트를 퀴즈용으로 변환
         quizList = wrongNotes.map(n => ({ q: n.q, a: n.a, ch: n.ch }));
         
-        // [추가] 오답 노지에서 실행 시 퀴즈 페이지로 이동시키고 UI 초기화
         const quizNavLink = document.querySelectorAll('.nav-item')[2]; // 🧠 Quiz 메뉴
         showPage('quiz-page', quizNavLink);
     } else {
@@ -353,7 +406,7 @@ function initQuiz(fromReview = false) {
     quizList.sort(() => Math.random() - 0.5);
     currentIdx = 0;
 
-    // [중요] 설정창을 숨기고 퀴즈 실행창을 보임
+    // 설정창 숨기고 퀴즈 실행창 보이기
     document.getElementById('quiz-setup').style.display = 'none';
     document.getElementById('quiz-run').style.display = 'block';
     
