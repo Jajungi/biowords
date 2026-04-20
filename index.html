@@ -115,22 +115,43 @@
 <body>
 
 <nav>
-    <div class="nav-toggle-container">
-        <span id="nav-label-mid" class="active-label">중간</span>
-        <label class="switch">
-            <input type="checkbox" id="term-toggle" onchange="toggleTerm()">
-            <span class="slider"></span>
-        </label>
-        <span id="nav-label-final">기말</span>
+    <div class="nav-left">
+        <div class="nav-toggle-container">
+            <span id="nav-label-mid" class="active-label">중간</span>
+            <label class="switch">
+                <input type="checkbox" id="term-toggle" onchange="toggleTerm()">
+                <span class="slider"></span>
+            </label>
+            <span id="nav-label-final">기말</span>
+        </div>
     </div>
 
-    <div class="nav-menus">
+    <div class="nav-center">
         <div class="nav-item active" onclick="showPage('vocab-page', this)">📖 Dictionary</div>
         <div id="nav-star" class="nav-item" onclick="showPage('star-page', this)">⭐ (0)</div>
         <div class="nav-item" onclick="showPage('quiz-page', this)">🧠 Quiz</div>
         <div id="nav-review" class="nav-item" onclick="showPage('review-page', this)">❌ (0)</div>
     </div>
+
+    <div class="nav-right">
+        <button class="info-btn" onclick="openInfo()">i</button>
+    </div>
 </nav>
+
+<div id="info-modal" class="modal-overlay" onclick="closeInfo(event)">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeInfo()">&times;</button>
+        <h3 style="color: var(--primary); margin-top: 0;">💡 사용 방법 안내</h3>
+        <ul>
+            <li><b>📖 Dictionary:</b> 단어를 검색하고 뜻을 확인합니다.</li>
+            <li><b>⭐ Hard Words:</b> 단어장 우측 별표를 눌러 외우기 힘든 단어만 따로 모아볼 수 있습니다.</li>
+            <li><b>🧠 Quiz:</b> 원하는 단원을 선택해 객관식/주관식 테스트를 봅니다. (3회 오답 시 자동으로 ⭐ 추가!)</li>
+            <li><b>❌ Review Note:</b> 틀린 문제들만 모아보고 다시 풀 수 있습니다.</li>
+            <li><b>🔄 학기 변경:</b> 좌측 상단의 스위치를 눌러 중간/기말고사 모드를 전환하세요.</li>
+        </ul>
+        <button class="btn btn-primary" onclick="closeInfo()" style="margin-top: 20px;">확인</button>
+    </div>
+</div>
 
 <div class="container">
     <div id="vocab-page" class="page active">
@@ -1001,6 +1022,18 @@ function init() {
     });
 }
 
+    // 💡 기능 설명 팝업 열기/닫기 함수
+function openInfo() {
+    document.getElementById('info-modal').style.display = 'flex';
+}
+
+function closeInfo(event) {
+    // 버튼을 눌렀거나, 모달 바깥의 어두운 배경을 클릭했을 때만 닫히도록 설정
+    if (!event || event.target.classList.contains('modal-overlay') || event.target.tagName === 'BUTTON') {
+        document.getElementById('info-modal').style.display = 'none';
+    }
+}
+    
 function searchDictionary() {
     const query = document.getElementById('search-input').value.toLowerCase();
     const chapters = document.querySelectorAll('#vocab-content .chapter-box');
