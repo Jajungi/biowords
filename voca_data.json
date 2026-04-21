@@ -1,4 +1,8 @@
 {
+  "examData": {
+        "midterm": [2023, 2024, 2025], # 중간고사는 3개년
+        "final": []                    # 기말고사는 아직 없으므로 비워둠
+    },
   "allData": {
     "midterm": {
       "Chapter 1": {
