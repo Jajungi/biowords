@@ -69,7 +69,7 @@
         .info-btn:hover { background: var(--primary); }
 
         /* =========================================
-           3. 모바일 화면 대응 (650px 이하)
+           3. 모바일 화면 대응
         ========================================= */
         @media (max-width: 650px) {
             nav { flex-direction: column; padding-top: 15px; padding-bottom: 5px; }
@@ -167,10 +167,15 @@
             background: var(--primary); color: white; border-color: var(--primary);
         }
         #pdf-viewer-container {
-            width: 100%; height: 700px; border: 1px solid #e2e8f0;
+            width: 100%; height: 750px; border: 1px solid #e2e8f0;
             border-radius: 8px; display: none; overflow: hidden; background: #f1f5f9;
         }
         #pdf-iframe { width: 100%; height: 100%; border: none; }
+        
+        .empty-exam-msg {
+            background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px;
+            padding: 40px; text-align: center; color: #64748b; font-weight: bold; width: 100%;
+        }
 
         /* =========================================
            7. 번역(1초 누름 감지) 관련 클래스
@@ -271,30 +276,30 @@
     </div>
 
     <div id="exam-page" class="page">
-        <h2 style="color:var(--primary)">📄 기출문제 뷰어</h2>
-        <p style="color: #718096; margin-bottom: 20px;">년도를 클릭하면 기출문제를 불러옵니다.</p>
-        <div class="exam-list">
-            <button class="exam-year-btn" onclick="openPdf(2023, this)">2023년</button>
-            <button class="exam-year-btn" onclick="openPdf(2024, this)">2024년</button>
-            <button class="exam-year-btn" onclick="openPdf(2025, this)">2025년</button>
-        </div>
+        <h2 id="exam-title" style="color:var(--primary)">📄 기출문제 뷰어 (중간)</h2>
+        <p style="color: #718096; margin-bottom: 20px;">년도를 클릭하면 해당 학기의 기출문제를 불러옵니다.</p>
+        
+        <div class="exam-list" id="exam-btn-list">
+            </div>
+
         <div id="pdf-viewer-container">
             <iframe id="pdf-iframe" src=""></iframe>
         </div>
         <p id="pdf-guide" style="color: var(--danger); font-size: 0.9rem; margin-top: 15px; display: none;">
-            * 브라우저 환경에 따라 뷰어가 보이지 않을 수 있습니다. 안 보인다면 <a id="pdf-direct-link" href="#" target="_blank" style="color: var(--accent); font-weight: bold;">여기</a>를 눌러 직접 확인하세요.
+            * 다운로드하여 보시려면 <a id="pdf-direct-link" href="#" target="_blank" style="color: var(--accent); font-weight: bold;">여기</a>를 누르세요.
         </p>
     </div>
 </div>
 
 <script>
-const GITHUB_USERNAME = "jajungi";
-const GITHUB_REPO = "biowords";
-const GITHUB_BRANCH = "main";
+const GITHUB_USERNAME = "jajungi"; 
+const GITHUB_REPO = "biowords"; 
+const GITHUB_BRANCH = "main"; 
 
 // ==========================================
-// 데이터 변수 (초기에는 비워둠, Fetch로 채움)
+// 전역 변수
 // ==========================================
+let examData = { midterm: [], final: [] };
 let allData = {};
 let koreanDictionary = {};
 let currentTerm = 'midterm';
@@ -308,22 +313,22 @@ let isReviewQuiz = false;
 let starWords = JSON.parse(localStorage.getItem('bio_stars_v2')) || { midterm: [], final: [] };
 let wrongNotes = JSON.parse(localStorage.getItem('bio_wrongs_v2')) || { midterm: [], final: [] };
 
-// 🚀 GitHub에서 JSON 데이터를 불러오는 함수
+// 🚀 GitHub에서 JSON 데이터 로드
 async function loadData() {
     const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/voca_data.json`;
 
     try {
         const response = await fetch(rawUrl);
-        if (!response.ok) throw new Error("네트워크 응답이 올바르지 않습니다.");
+        if (!response.ok) throw new Error("네트워크 응답 에러");
         
         const fetchedData = await response.json();
         
-        // 데이터 할당
-        allData = fetchedData.allData;
-        koreanDictionary = fetchedData.koreanDictionary;
-        data = allData[currentTerm];
+        // 데이터 할당 (examData가 json에 없으면 빈 배열로 초기화)
+        examData = fetchedData.examData || { midterm: [], final: [] };
+        allData = fetchedData.allData || {};
+        koreanDictionary = fetchedData.koreanDictionary || {};
+        data = allData[currentTerm] || {};
 
-        // 화면 세팅 시작
         init();
         
     } catch (error) {
@@ -331,7 +336,7 @@ async function loadData() {
         document.getElementById('vocab-content').innerHTML = `
             <div class="coming-soon-msg">
                 <h3>⚠️ 데이터 로드 실패</h3>
-                <p>GitHub에서 데이터를 가져오지 못했습니다.<br>소스 코드 내의 GITHUB_USERNAME과 GITHUB_REPO 설정을 다시 확인해주세요.</p>
+                <p>GitHub 설정(Username, Repo)을 확인하거나, JSON 형식이 올바른지 확인하세요.</p>
             </div>`;
     }
 }
@@ -348,6 +353,7 @@ function saveToLocal() {
     localStorage.setItem('bio_wrongs_v2', JSON.stringify(wrongNotes));
 }
 
+// 🔄 학기 전환 토글 함수
 function toggleTerm() {
     const isFinal = document.getElementById('term-toggle').checked;
     currentTerm = isFinal ? 'final' : 'midterm';
@@ -355,24 +361,21 @@ function toggleTerm() {
     
     const labelMid = document.getElementById('nav-label-mid');
     const labelFinal = document.getElementById('nav-label-final');
-    const pageTitle = document.getElementById('page-title');
-    const starTitle = document.getElementById('star-title');
-    const reviewTitle = document.getElementById('review-title');
+    
+    // 타이틀 변경
+    document.getElementById('page-title').innerText = `🌿 Biology Dictionary (${isFinal ? '기말' : '중간'})`;
+    document.getElementById('star-title').innerText = `⭐ Hard Words (${isFinal ? '기말' : '중간'})`;
+    document.getElementById('review-title').innerText = `❌ Review Note (${isFinal ? '기말' : '중간'})`;
+    document.getElementById('exam-title').innerText = `📄 기출문제 뷰어 (${isFinal ? '기말' : '중간'})`;
     
     if (isFinal) {
         document.body.classList.add('final-theme');
         labelMid.classList.remove('active-label');
         labelFinal.classList.add('active-label');
-        pageTitle.innerText = "🌿 Biology Dictionary (기말)";
-        starTitle.innerText = "⭐ Hard Words (기말)";
-        reviewTitle.innerText = "❌ Review Note (기말)";
     } else {
         document.body.classList.remove('final-theme');
         labelMid.classList.add('active-label');
         labelFinal.classList.remove('active-label');
-        pageTitle.innerText = "🌿 Biology Dictionary (중간)";
-        starTitle.innerText = "⭐ Hard Words (중간)";
-        reviewTitle.innerText = "❌ Review Note (중간)";
     }
     
     document.getElementById('search-input').value = ''; 
@@ -380,8 +383,10 @@ function toggleTerm() {
     updateReviewCount();
     document.getElementById('nav-star').textContent = `⭐ (${starWords[currentTerm].length})`;
     
+    // 열려있는 페이지에 맞춰 렌더링 새로고침
     if (document.getElementById('star-page').classList.contains('active')) renderStars();
     if (document.getElementById('review-page').classList.contains('active')) updateReviewPage();
+    if (document.getElementById('exam-page').classList.contains('active')) renderExams();
 }
 
 function renderChapters() {
@@ -393,10 +398,7 @@ function renderChapters() {
     selectBox.innerHTML = '';
 
     if (!data || Object.keys(data).length === 0) {
-        vocabBox.innerHTML = `
-            <div class="coming-soon-msg">
-                <h3>🚀 단어장 Coming Soon!</h3>
-            </div>`;
+        vocabBox.innerHTML = `<div class="coming-soon-msg"><h3>🚀 단어장 Coming Soon!</h3></div>`;
         selectBox.innerHTML = '<p style="color:#718096">퀴즈를 진행할 단원이 아직 없습니다.</p>';
         quizStartBtn.style.display = 'none';
         return;
@@ -428,16 +430,14 @@ function init() {
     updateReviewCount();
     document.getElementById('nav-star').textContent = `⭐ (${starWords[currentTerm].length})`;
     renderChapters();
+    renderExams(); // 기출문제 버튼 렌더링
 
     document.getElementById('user-answer').addEventListener('keypress', (e) => { 
         if(e.key === 'Enter') (document.getElementById('submit-btn').style.display !== 'none') ? checkAnswer() : nextQuestion();
     });
 }
 
-function openInfo() {
-    document.getElementById('info-modal').style.display = 'flex';
-}
-
+function openInfo() { document.getElementById('info-modal').style.display = 'flex'; }
 function closeInfo(event) {
     if (!event || event.target.classList.contains('modal-overlay') || event.target.tagName === 'BUTTON') {
         document.getElementById('info-modal').style.display = 'none';
@@ -483,8 +483,10 @@ function showPage(id, el) {
     document.querySelectorAll('.nav-item, .exam-btn').forEach(n => n.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if(el) el.classList.add('active');
+    
     if(id === 'star-page') renderStars();
     if(id === 'review-page') updateReviewPage();
+    if(id === 'exam-page') renderExams();
 }
 
 function toggleStar(word) {
@@ -643,30 +645,67 @@ function clearWrongNotes() {
     } 
 }
 
-// 💡 기출문제 PDF 뷰어 로직
+// ==========================================
+// 💡 동적 기출문제 버튼 생성 및 PDF 뷰어(jsDelivr 사용)
+// ==========================================
+function renderExams() {
+    const listDiv = document.getElementById('exam-btn-list');
+    const container = document.getElementById('pdf-viewer-container');
+    const guide = document.getElementById('pdf-guide');
+    
+    // 뷰어 초기화
+    listDiv.innerHTML = '';
+    container.style.display = 'none';
+    guide.style.display = 'none';
+
+    // 현재 모드(중간/기말)에 해당하는 년도 배열 가져오기
+    const exams = examData[currentTerm] || [];
+
+    // 기출문제가 없을 경우
+    if (exams.length === 0) {
+        listDiv.innerHTML = `
+            <div class="empty-exam-msg">
+                해당 학기의 기출문제가 아직 업로드되지 않았습니다.<br>
+                <span style="font-size:0.9rem; font-weight:normal; margin-top:10px; display:inline-block;">(추후 업데이트 예정 🚀)</span>
+            </div>`;
+        return;
+    }
+
+    // 기출문제가 있을 경우 버튼 생성
+    exams.forEach(year => {
+        const btn = document.createElement('button');
+        btn.className = 'exam-year-btn';
+        btn.textContent = `${year}년`;
+        btn.onclick = () => openPdf(year, btn);
+        listDiv.appendChild(btn);
+    });
+}
+
 function openPdf(year, btn) {
     document.querySelectorAll('.exam-year-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
     
-    // 파일명 조립 (형식: 2023년_생명과학개론_중간고사문제및정답_최종.pdf)
-    const fileName = `${year}년_생명과학개론_중간고사문제및정답_최종.pdf`;
+    // 예: "2023년_생명과학개론_중간고사문제및정답_최종.pdf"
+    const termStr = currentTerm === 'midterm' ? '중간고사' : '기말고사';
+    const fileName = `${year}년_생명과학개론_${termStr}문제및정답_최종.pdf`;
     
-    // 상단에 설정한 GITHUB 정보 활용하여 URL 자동 생성
-    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${fileName}`;
-    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(rawUrl)}&embedded=true`;
+    // 구글 뷰어 엑세스 거부를 회피하기 위해 jsDelivr CDN 직접 임베드 방식을 사용
+    const fileUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_USERNAME}/${GITHUB_REPO}@${GITHUB_BRANCH}/${fileName}`;
     
     const container = document.getElementById('pdf-viewer-container');
     const iframe = document.getElementById('pdf-iframe');
     const guideText = document.getElementById('pdf-guide');
     const directLink = document.getElementById('pdf-direct-link');
     
-    iframe.src = viewerUrl;
+    iframe.src = fileUrl;
     container.style.display = 'block';
     guideText.style.display = 'block';
-    directLink.href = rawUrl;
+    directLink.href = fileUrl;
 }
 
-// 💡 1초 꾹 누르기(번역) 기능 로직
+// ==========================================
+// 💡 1초 꾹 누르기(번역) 기능
+// ==========================================
 let pressTimer = null;
 let currentPressItem = null;
 
@@ -721,7 +760,6 @@ function hideTranslation(item) {
 
 document.addEventListener('touchstart', startHold, { passive: true });
 document.addEventListener('mousedown', startHold);
-
 document.addEventListener('touchend', endHold);
 document.addEventListener('touchcancel', endHold);
 document.addEventListener('mouseup', endHold);
@@ -733,7 +771,7 @@ document.addEventListener('contextmenu', (e) => {
     }
 });
 
-// 페이지 로드 시 가장 먼저 데이터 불러오기
+// 시작점
 window.onload = loadData;
 
 </script>
