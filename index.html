@@ -7,13 +7,12 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        // PDF.js 워커(Worker) 경로 설정
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
     <style>
         /* =========================================
-           1. 기본 테마 & 기말 테마 (색상 변수)
+           1. 기본 테마 & 기말 테마
         ========================================= */
         :root {
             --primary: #27ae60; 
@@ -114,7 +113,7 @@
         @keyframes slideUpModal { to { transform: translateY(0); } }
 
         /* =========================================
-           5. 메인 레이아웃 및 UI 요소들
+           5. 메인 레이아웃 및 기타 UI 요소
         ========================================= */
         .container { max-width: 900px; margin: 30px auto; padding: 20px; }
         .page { display: none; background: var(--card-bg); padding: 35px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: background 0.3s; }
@@ -163,7 +162,7 @@
         .coming-soon-msg h3 { margin-bottom: 10px; color: var(--secondary); }
 
         /* =========================================
-           6. 기출문제 뷰어 관련 CSS (PDF.js 전용)
+           6. 기출문제 뷰어 관련 CSS (모바일 반응형 개선)
         ========================================= */
         .exam-list { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .exam-year-btn {
@@ -187,6 +186,7 @@
 
         .pdf-controls {
             background: #cbd5e1; padding: 10px; display: flex; justify-content: center; align-items: center; gap: 15px;
+            flex-wrap: wrap; /* 모바일에서 버튼이 잘리지 않게 줄바꿈 허용 */
         }
         
         .pdf-controls button {
@@ -194,18 +194,28 @@
         }
         .pdf-controls button:disabled { background: #94a3b8; cursor: not-allowed; }
         
-        .pdf-controls span { font-weight: bold; color: var(--secondary); }
+        .pdf-controls span { font-weight: bold; color: var(--secondary); font-size: 0.95rem; }
 
+        /* 🚨 중요: 모바일에서 찌그러짐 방지를 위한 컨테이너 및 캔버스 설정 */
         #pdf-canvas-container {
-            width: 100%; height: 700px; overflow: auto; padding: 20px 0;
-            display: flex; justify-content: center; background: #e2e8f0;
+            width: 100%; 
+            height: 70vh; /* 화면 높이의 70% 차지하도록 설정 */
+            max-height: 800px;
+            overflow: auto; /* 내용이 크면 스크롤 생성 */
+            padding: 15px 0;
+            background: #e2e8f0;
+            text-align: center; /* flex 대신 텍스트 정렬을 써서 강제 늘어남 방지 */
+            -webkit-overflow-scrolling: touch; /* 모바일 부드러운 스크롤 */
         }
 
         #pdf-canvas {
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2); max-width: 100%; height: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+            max-width: 95%; /* 좌우 여백 살짝 남기기 */
+            height: auto !important; /* 🔥 핵심: 높이는 무조건 원본 비율에 맞춤 */
+            display: inline-block;
         }
 
-        #pdf-loading { display: none; padding: 40px; font-weight: bold; color: var(--primary); }
+        #pdf-loading { display: none; padding: 40px; font-weight: bold; color: var(--primary); text-align: center; }
 
         /* =========================================
            7. 번역(1초 누름 감지) 관련 클래스
@@ -334,8 +344,8 @@
 // ==========================================
 // ⭐ [필수 설정] 본인의 GitHub 정보를 입력하세요 ⭐
 // ==========================================
-const GITHUB_USERNAME = "Jajungi";
-const GITHUB_REPO = "biowords"; 
+const GITHUB_USERNAME = "여기에_깃허브_아이디_입력"; // 예: Myeongjin
+const GITHUB_REPO = "여기에_레포지토리_이름_입력"; 
 const GITHUB_BRANCH = "main"; 
 
 // ==========================================
@@ -365,7 +375,6 @@ async function loadData() {
         
         const fetchedData = await response.json();
         
-        // 데이터 할당
         examData = fetchedData.examData || { midterm: [], final: [] };
         allData = fetchedData.allData || {};
         koreanDictionary = fetchedData.koreanDictionary || {};
@@ -686,13 +695,12 @@ function clearWrongNotes() {
 }
 
 // ==========================================
-// 💡 PDF.js 기출문제 뷰어 로직
+// 💡 PDF.js 기출문제 뷰어 로직 (동적 스케일링 추가)
 // ==========================================
 let pdfDoc = null;
 let pageNum = 1;
 let pageIsRendering = false;
 let pageNumPending = null;
-let pdfScale = window.innerWidth < 650 ? 0.8 : 1.3; // 모바일/PC 스케일 조정
 
 function renderExams() {
     const listDiv = document.getElementById('exam-btn-list');
@@ -725,7 +733,7 @@ function renderExams() {
     });
 }
 
-    function openPdf(year, btn) {
+function openPdf(year, btn) {
     document.querySelectorAll('.exam-year-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
     
@@ -735,17 +743,15 @@ function renderExams() {
     const termStr = currentTerm === 'midterm' ? '중간고사' : '기말고사';
     const fileName = `${year}년_생명과학개론_${termStr}문제및정답_최종.pdf`;
     
-    // 🚨 핵심 수정: 맥북 한글 파일명(자음/모음 분리 현상) 호환 처리
+    // NFD 처리로 맥북 환경의 한글 깨짐 호환
     const nfdFileName = fileName.normalize('NFD');
     const encodedFileName = encodeURIComponent(nfdFileName);
     
-    // GitHub 원본 주소를 사용하여 PDF.js 로드
     const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedFileName}`;
     
     document.getElementById('pdf-direct-link').href = rawUrl;
     document.getElementById('pdf-guide').style.display = 'block';
 
-    // PDF 로드 시작
     pdfjsLib.getDocument(rawUrl).promise.then(pdfDoc_ => {
         pdfDoc = pdfDoc_;
         document.getElementById('page-count').textContent = pdfDoc.numPages;
@@ -760,15 +766,31 @@ function renderExams() {
     });
 }
 
+// 🔥 캔버스 렌더링 시 너비를 동적으로 감지하여 비율을 조정하는 핵심 함수
 function renderPage(num) {
     pageIsRendering = true;
     const canvas = document.getElementById('pdf-canvas');
     const ctx = canvas.getContext('2d');
 
     pdfDoc.getPage(num).then(page => {
-        const viewport = page.getViewport({ scale: pdfScale });
-        canvas.height = viewport.height;
+        // 컨테이너의 실제 화면 너비를 가져옴
+        const containerWidth = document.getElementById('pdf-canvas-container').clientWidth;
+        
+        // 원본 1배율일 때의 PDF 크기를 측정
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        
+        // 여백(5%)을 남기고 화면에 딱 맞도록 스케일 계산
+        let calculatedScale = (containerWidth * 0.95) / unscaledViewport.width;
+        
+        // PC 화면에서 무식하게 너무 커지는 것을 방지 (최대 1.5배)
+        if (calculatedScale > 1.5) calculatedScale = 1.5;
+
+        // 최종 계산된 스케일로 뷰포트 설정
+        const viewport = page.getViewport({ scale: calculatedScale });
+        
+        // 캔버스의 너비와 높이를 비율에 맞게 정확히 지정
         canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
         const renderCtx = { canvasContext: ctx, viewport: viewport };
 
@@ -782,7 +804,6 @@ function renderPage(num) {
 
         document.getElementById('page-num').textContent = num;
         
-        // 이전/다음 버튼 활성화 상태 관리
         document.getElementById('prev-page').disabled = num <= 1;
         document.getElementById('next-page').disabled = num >= pdfDoc.numPages;
     });
@@ -808,13 +829,15 @@ function onNextPage() {
     queueRenderPage(pageNum);
 }
 
-// 화면 크기가 바뀔 때 PDF 비율 재조정
+// 화면 회전(가로/세로) 또는 리사이즈 시 PDF를 화면에 맞게 다시 그려줌
+let resizeTimer;
 window.addEventListener('resize', () => {
-    const newScale = window.innerWidth < 650 ? 0.8 : 1.3;
-    if (pdfScale !== newScale && pdfDoc) {
-        pdfScale = newScale;
-        renderPage(pageNum);
-    }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if (pdfDoc && !pageIsRendering) {
+            renderPage(pageNum);
+        }
+    }, 200);
 });
 
 
