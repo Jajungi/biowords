@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>생명과학개론 단어장 & 기출문제</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // PDF.js 워커(Worker) 경로 설정
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
     <style>
         /* =========================================
            1. 기본 테마 & 기말 테마 (색상 변수)
@@ -156,7 +163,7 @@
         .coming-soon-msg h3 { margin-bottom: 10px; color: var(--secondary); }
 
         /* =========================================
-           6. 기출문제 뷰어 관련 CSS
+           6. 기출문제 뷰어 관련 CSS (PDF.js 전용)
         ========================================= */
         .exam-list { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .exam-year-btn {
@@ -166,16 +173,39 @@
         .exam-year-btn:hover, .exam-year-btn.active {
             background: var(--primary); color: white; border-color: var(--primary);
         }
-        #pdf-viewer-container {
-            width: 100%; height: 750px; border: 1px solid #e2e8f0;
-            border-radius: 8px; display: none; overflow: hidden; background: #f1f5f9;
-        }
-        #pdf-iframe { width: 100%; height: 100%; border: none; }
         
         .empty-exam-msg {
             background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px;
             padding: 40px; text-align: center; color: #64748b; font-weight: bold; width: 100%;
         }
+
+        #pdf-wrapper {
+            display: none; border: 1px solid #e2e8f0; border-radius: 8px; 
+            background: #f1f5f9; overflow: hidden; text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .pdf-controls {
+            background: #cbd5e1; padding: 10px; display: flex; justify-content: center; align-items: center; gap: 15px;
+        }
+        
+        .pdf-controls button {
+            background: var(--secondary); color: white; border: none; padding: 6px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
+        .pdf-controls button:disabled { background: #94a3b8; cursor: not-allowed; }
+        
+        .pdf-controls span { font-weight: bold; color: var(--secondary); }
+
+        #pdf-canvas-container {
+            width: 100%; height: 700px; overflow: auto; padding: 20px 0;
+            display: flex; justify-content: center; background: #e2e8f0;
+        }
+
+        #pdf-canvas {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); max-width: 100%; height: auto;
+        }
+
+        #pdf-loading { display: none; padding: 40px; font-weight: bold; color: var(--primary); }
 
         /* =========================================
            7. 번역(1초 누름 감지) 관련 클래스
@@ -279,20 +309,32 @@
         <h2 id="exam-title" style="color:var(--primary)">📄 기출문제 뷰어 (중간)</h2>
         <p style="color: #718096; margin-bottom: 20px;">년도를 클릭하면 해당 학기의 기출문제를 불러옵니다.</p>
         
-        <div class="exam-list" id="exam-btn-list">
-            </div>
+        <div class="exam-list" id="exam-btn-list"></div>
 
-        <div id="pdf-viewer-container">
-            <iframe id="pdf-iframe" src=""></iframe>
+        <div id="pdf-loading">⏳ PDF를 불러오는 중입니다...</div>
+        
+        <div id="pdf-wrapper">
+            <div class="pdf-controls">
+                <button id="prev-page" onclick="onPrevPage()">◀ 이전</button>
+                <span>Page: <span id="page-num">1</span> / <span id="page-count">?</span></span>
+                <button id="next-page" onclick="onNextPage()">다음 ▶</button>
+            </div>
+            <div id="pdf-canvas-container">
+                <canvas id="pdf-canvas"></canvas>
+            </div>
         </div>
+        
         <p id="pdf-guide" style="color: var(--danger); font-size: 0.9rem; margin-top: 15px; display: none;">
-            * 다운로드하여 보시려면 <a id="pdf-direct-link" href="#" target="_blank" style="color: var(--accent); font-weight: bold;">여기</a>를 누르세요.
+            * 브라우저에서 바로 보이지 않거나 원본을 원하시면 <a id="pdf-direct-link" href="#" target="_blank" style="color: var(--accent); font-weight: bold;">여기</a>를 눌러 다운로드하세요.
         </p>
     </div>
 </div>
 
 <script>
-const GITHUB_USERNAME = "Jajungi"; 
+// ==========================================
+// ⭐ [필수 설정] 본인의 GitHub 정보를 입력하세요 ⭐
+// ==========================================
+const GITHUB_USERNAME = "Jajungi";
 const GITHUB_REPO = "biowords"; 
 const GITHUB_BRANCH = "main"; 
 
@@ -323,7 +365,7 @@ async function loadData() {
         
         const fetchedData = await response.json();
         
-        // 데이터 할당 (examData가 json에 없으면 빈 배열로 초기화)
+        // 데이터 할당
         examData = fetchedData.examData || { midterm: [], final: [] };
         allData = fetchedData.allData || {};
         koreanDictionary = fetchedData.koreanDictionary || {};
@@ -362,7 +404,6 @@ function toggleTerm() {
     const labelMid = document.getElementById('nav-label-mid');
     const labelFinal = document.getElementById('nav-label-final');
     
-    // 타이틀 변경
     document.getElementById('page-title').innerText = `🌿 Biology Dictionary (${isFinal ? '기말' : '중간'})`;
     document.getElementById('star-title').innerText = `⭐ Hard Words (${isFinal ? '기말' : '중간'})`;
     document.getElementById('review-title').innerText = `❌ Review Note (${isFinal ? '기말' : '중간'})`;
@@ -383,7 +424,6 @@ function toggleTerm() {
     updateReviewCount();
     document.getElementById('nav-star').textContent = `⭐ (${starWords[currentTerm].length})`;
     
-    // 열려있는 페이지에 맞춰 렌더링 새로고침
     if (document.getElementById('star-page').classList.contains('active')) renderStars();
     if (document.getElementById('review-page').classList.contains('active')) updateReviewPage();
     if (document.getElementById('exam-page').classList.contains('active')) renderExams();
@@ -430,7 +470,7 @@ function init() {
     updateReviewCount();
     document.getElementById('nav-star').textContent = `⭐ (${starWords[currentTerm].length})`;
     renderChapters();
-    renderExams(); // 기출문제 버튼 렌더링
+    renderExams();
 
     document.getElementById('user-answer').addEventListener('keypress', (e) => { 
         if(e.key === 'Enter') (document.getElementById('submit-btn').style.display !== 'none') ? checkAnswer() : nextQuestion();
@@ -646,22 +686,27 @@ function clearWrongNotes() {
 }
 
 // ==========================================
-// 💡 동적 기출문제 버튼 생성 및 PDF 뷰어(jsDelivr 사용)
+// 💡 PDF.js 기출문제 뷰어 로직
 // ==========================================
+let pdfDoc = null;
+let pageNum = 1;
+let pageIsRendering = false;
+let pageNumPending = null;
+let pdfScale = window.innerWidth < 650 ? 0.8 : 1.3; // 모바일/PC 스케일 조정
+
 function renderExams() {
     const listDiv = document.getElementById('exam-btn-list');
-    const container = document.getElementById('pdf-viewer-container');
+    const wrapper = document.getElementById('pdf-wrapper');
     const guide = document.getElementById('pdf-guide');
+    const loading = document.getElementById('pdf-loading');
     
-    // 뷰어 초기화
     listDiv.innerHTML = '';
-    container.style.display = 'none';
+    wrapper.style.display = 'none';
     guide.style.display = 'none';
+    loading.style.display = 'none';
 
-    // 현재 모드(중간/기말)에 해당하는 년도 배열 가져오기
     const exams = examData[currentTerm] || [];
 
-    // 기출문제가 없을 경우
     if (exams.length === 0) {
         listDiv.innerHTML = `
             <div class="empty-exam-msg">
@@ -671,7 +716,6 @@ function renderExams() {
         return;
     }
 
-    // 기출문제가 있을 경우 버튼 생성
     exams.forEach(year => {
         const btn = document.createElement('button');
         btn.className = 'exam-year-btn';
@@ -681,37 +725,96 @@ function renderExams() {
     });
 }
 
-// 💡 기출문제 PDF 뷰어 로직 (한글 깨짐 방지 및 우회망 적용)
 function openPdf(year, btn) {
     document.querySelectorAll('.exam-year-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
     
-    // 1. 파일명 조립
+    document.getElementById('pdf-wrapper').style.display = 'none';
+    document.getElementById('pdf-loading').style.display = 'block';
+    
     const termStr = currentTerm === 'midterm' ? '중간고사' : '기말고사';
     const fileName = `${year}년_생명과학개론_${termStr}문제및정답_최종.pdf`;
-    
-    // 2. ⭐ 핵심: 한글 파일명이 URL에서 깨지지 않도록 안전하게 인코딩
     const encodedFileName = encodeURIComponent(fileName);
     
-    // 3. 업데이트 지연이 없는 다른 우회망(githack) 및 원본(Raw) 주소 생성
+    // GitHub 원본 주소를 사용하여 PDF.js 로드
     const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedFileName}`;
-    const githackUrl = `https://raw.githack.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedFileName}`;
     
-    // 4. 모바일/PC 호환성을 가장 높여주는 구글 문서 뷰어로 연결
-    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(rawUrl)}&embedded=true`;
-    
-    const container = document.getElementById('pdf-viewer-container');
-    const iframe = document.getElementById('pdf-iframe');
-    const guideText = document.getElementById('pdf-guide');
-    const directLink = document.getElementById('pdf-direct-link');
-    
-    // iframe에 구글 뷰어 띄우기 (만약 구글 뷰어가 가끔 백지로 뜬다면 viewerUrl 대신 githackUrl을 넣으시면 됩니다)
-    iframe.src = viewerUrl; 
-    container.style.display = 'block';
-    guideText.style.display = 'block';
-    directLink.href = rawUrl; // 직접 다운로드 링크는 깃허브 원본으로 연결
+    document.getElementById('pdf-direct-link').href = rawUrl;
+    document.getElementById('pdf-guide').style.display = 'block';
+
+    // PDF 로드 시작
+    pdfjsLib.getDocument(rawUrl).promise.then(pdfDoc_ => {
+        pdfDoc = pdfDoc_;
+        document.getElementById('page-count').textContent = pdfDoc.numPages;
+        document.getElementById('pdf-loading').style.display = 'none';
+        document.getElementById('pdf-wrapper').style.display = 'block';
+        
+        pageNum = 1;
+        renderPage(pageNum);
+    }).catch(err => {
+        console.error("PDF 로드 실패:", err);
+        document.getElementById('pdf-loading').innerHTML = `❌ PDF를 불러오지 못했습니다.<br><span style="font-size:0.9rem; font-weight:normal;">파일명이나 깃허브 경로를 확인해주세요.</span>`;
+    });
 }
-    
+
+function renderPage(num) {
+    pageIsRendering = true;
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+
+    pdfDoc.getPage(num).then(page => {
+        const viewport = page.getViewport({ scale: pdfScale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderCtx = { canvasContext: ctx, viewport: viewport };
+
+        page.render(renderCtx).promise.then(() => {
+            pageIsRendering = false;
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+        });
+
+        document.getElementById('page-num').textContent = num;
+        
+        // 이전/다음 버튼 활성화 상태 관리
+        document.getElementById('prev-page').disabled = num <= 1;
+        document.getElementById('next-page').disabled = num >= pdfDoc.numPages;
+    });
+}
+
+function queueRenderPage(num) {
+    if (pageIsRendering) {
+        pageNumPending = num;
+    } else {
+        renderPage(num);
+    }
+}
+
+function onPrevPage() {
+    if (pageNum <= 1) return;
+    pageNum--;
+    queueRenderPage(pageNum);
+}
+
+function onNextPage() {
+    if (pageNum >= pdfDoc.numPages) return;
+    pageNum++;
+    queueRenderPage(pageNum);
+}
+
+// 화면 크기가 바뀔 때 PDF 비율 재조정
+window.addEventListener('resize', () => {
+    const newScale = window.innerWidth < 650 ? 0.8 : 1.3;
+    if (pdfScale !== newScale && pdfDoc) {
+        pdfScale = newScale;
+        renderPage(pageNum);
+    }
+});
+
+
 // ==========================================
 // 💡 1초 꾹 누르기(번역) 기능
 // ==========================================
@@ -773,11 +876,8 @@ document.addEventListener('touchend', endHold);
 document.addEventListener('touchcancel', endHold);
 document.addEventListener('mouseup', endHold);
 document.addEventListener('mouseleave', endHold);
-
 document.addEventListener('contextmenu', (e) => {
-    if (currentPressItem && currentPressItem.classList.contains('translated-active')) {
-        e.preventDefault();
-    }
+    if (currentPressItem && currentPressItem.classList.contains('translated-active')) e.preventDefault();
 });
 
 // 시작점
