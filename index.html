@@ -737,7 +737,7 @@ function openPdf(year, btn) {
     const encodedFileName = encodeURIComponent(fileName);
     
     // GitHub 원본 주소를 사용하여 PDF.js 로드
-    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedFileName}`;
+    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/bolb/${GITHUB_BRANCH}/${encodedFileName}`;
     
     document.getElementById('pdf-direct-link').href = rawUrl;
     document.getElementById('pdf-guide').style.display = 'block';
