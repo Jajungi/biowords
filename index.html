@@ -681,28 +681,37 @@ function renderExams() {
     });
 }
 
+// 💡 기출문제 PDF 뷰어 로직 (한글 깨짐 방지 및 우회망 적용)
 function openPdf(year, btn) {
     document.querySelectorAll('.exam-year-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
     
-    // 예: "2023년_생명과학개론_중간고사문제및정답_최종.pdf"
+    // 1. 파일명 조립
     const termStr = currentTerm === 'midterm' ? '중간고사' : '기말고사';
     const fileName = `${year}년_생명과학개론_${termStr}문제및정답_최종.pdf`;
     
-    // 구글 뷰어 엑세스 거부를 회피하기 위해 jsDelivr CDN 직접 임베드 방식을 사용
-    const fileUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_USERNAME}/${GITHUB_REPO}@${GITHUB_BRANCH}/${fileName}`;
+    // 2. ⭐ 핵심: 한글 파일명이 URL에서 깨지지 않도록 안전하게 인코딩
+    const encodedFileName = encodeURIComponent(fileName);
+    
+    // 3. 업데이트 지연이 없는 다른 우회망(githack) 및 원본(Raw) 주소 생성
+    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedFileName}`;
+    const githackUrl = `https://raw.githack.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedFileName}`;
+    
+    // 4. 모바일/PC 호환성을 가장 높여주는 구글 문서 뷰어로 연결
+    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(rawUrl)}&embedded=true`;
     
     const container = document.getElementById('pdf-viewer-container');
     const iframe = document.getElementById('pdf-iframe');
     const guideText = document.getElementById('pdf-guide');
     const directLink = document.getElementById('pdf-direct-link');
     
-    iframe.src = fileUrl;
+    // iframe에 구글 뷰어 띄우기 (만약 구글 뷰어가 가끔 백지로 뜬다면 viewerUrl 대신 githackUrl을 넣으시면 됩니다)
+    iframe.src = viewerUrl; 
     container.style.display = 'block';
     guideText.style.display = 'block';
-    directLink.href = fileUrl;
+    directLink.href = rawUrl; // 직접 다운로드 링크는 깃허브 원본으로 연결
 }
-
+    
 // ==========================================
 // 💡 1초 꾹 누르기(번역) 기능
 // ==========================================
