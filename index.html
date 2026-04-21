@@ -725,7 +725,7 @@ function renderExams() {
     });
 }
 
-function openPdf(year, btn) {
+    function openPdf(year, btn) {
     document.querySelectorAll('.exam-year-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
     
@@ -734,10 +734,13 @@ function openPdf(year, btn) {
     
     const termStr = currentTerm === 'midterm' ? '중간고사' : '기말고사';
     const fileName = `${year}년_생명과학개론_${termStr}문제및정답_최종.pdf`;
-    const encodedFileName = encodeURIComponent(fileName);
+    
+    // 🚨 핵심 수정: 맥북 한글 파일명(자음/모음 분리 현상) 호환 처리
+    const nfdFileName = fileName.normalize('NFD');
+    const encodedFileName = encodeURIComponent(nfdFileName);
     
     // GitHub 원본 주소를 사용하여 PDF.js 로드
-    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/bolb/${GITHUB_BRANCH}/${encodedFileName}`;
+    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodedFileName}`;
     
     document.getElementById('pdf-direct-link').href = rawUrl;
     document.getElementById('pdf-guide').style.display = 'block';
