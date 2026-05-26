@@ -177,18 +177,18 @@
       },
       "Chapter 14": {
         "Speciation": "An evolutionary process in which one species splits into two or more species.",
-        "Species": "A group of populations the members of which have the potential to interbreed and produce viable, fertile offspring. See also biological species concept.",
+        "Species": "A group of populations whose members can interbreed in nature and produce viable, fertile offspring.",
         "Reproductive barrier": "A factor that prevents individuals of closely related species from interbreeding.",
         "Prezygotic barrier": "A reproductive barrier that prevents mating between species or hinders fertilization of eggs if members of different species attempt to mate.",
         "Postzygotic barrier": "A reproductive barrier that prevents development of fertile adults if hybridization occurs.",
-        "Allopatric speciation": "The formation of a new species in populations that are geographically isolated from one another. See also sympatric speciation.",
-        "Sympatric speciation": "The formation of a new species in populations that live in the same geographic area. See also allopatric speciation.",
+        "Allopatric speciation": "The formation of a new species when populations become geographically isolated and diverge over time.",
+        "Sympatric speciation": "The formation of a new species from populations living in the same geographic area, usually through reproductive isolation without physical separation.",
         "Polyploid": "An organism that has more than two complete sets of chromosomes as a result of an accident of cell division.",
         "Convergent evolution": "The evolution of similar features in different evolutionary lineages, which can result from living in very similar environments.",
         "Three-domain system": "A system of taxonomic classification based on three basic groups: Bacteria, Archaea, and Eukarya."
       },
       "Chapter 15": {
-        "Prokaryotes": "An organism characterized by prokaryotic cells. See also prokaryotic cell.",
+        "Prokaryotes": "Organisms whose cells lack a membrane-enclosed nucleus and other membrane-bound organelles; this group includes Bacteria and Archaea.",
         "Ribozymes": "An RNA molecule that functions as an enzyme.",
         "Microbiome": "The collection of genomes of individual microbial species present in a particular environment, such as the human intestinal tract.",
         "Microbiota": "The community of microorganisms that live in and on the body of an animal.",
@@ -253,7 +253,7 @@
         "Anatomy": "The study of the structure of an organism and its parts.",
         "Physiology": "The study of the function of an organism’s structural equipment.",
         "Tissue": "An integrated group of similar cells that performs a specific function within a multicellular organism.",
-        "Epithelium": "See epithelial tissue.",
+        "Epithelium": "A sheet of tightly packed cells that covers body surfaces, lines internal cavities and organs, and forms glands.",
         "connective tissue": "Tissue consisting of cells held in an abundant extracellular matrix.",
         "extracellular matrix": "The meshwork that surrounds animal cells, consisting of a web of protein and polysaccharide fibers embedded in a liquid, jelly, or solid.",
         "Adipose tissue": "A type of connective tissue in which the cells contain fat.",
@@ -929,7 +929,7 @@
     },
     "Species": {
       "word": "종",
-      "def": "교배하여 생존 가능하고 번식 가능한 자손을 낳을 수 있는 개체군의 무리. 생물학적 종 개념 참조."
+      "def": "자연 상태에서 서로 교배하여 생존 가능하고 번식 가능한 자손을 낳을 수 있는 개체군의 무리."
     },
     "Reproductive barrier": {
       "word": "생식적 격리 (생식 장벽)",
@@ -945,11 +945,11 @@
     },
     "Allopatric speciation": {
       "word": "이소적 종분화",
-      "def": "지리적으로 서로 격리된 개체군에서 새로운 종이 형성되는 현상. 동소적 종분화 참조."
+      "def": "개체군이 지리적으로 격리된 뒤 시간이 지나며 분화하여 새로운 종이 형성되는 현상."
     },
     "Sympatric speciation": {
       "word": "동소적 종분화",
-      "def": "동일한 지리적 영역에 사는 개체군에서 새로운 종이 형성되는 현상. 이소적 종분화 참조."
+      "def": "물리적 지리 분리 없이 같은 지역에 사는 개체군에서 생식적 격리가 생겨 새로운 종이 형성되는 현상."
     },
     "Polyploid": {
       "word": "배수체의",
@@ -965,7 +965,7 @@
     },
     "Prokaryotes": {
       "word": "원핵생물",
-      "def": "원핵세포로 특징지어지는 생물. 원핵세포 참조."
+      "def": "막으로 둘러싸인 핵과 막성 세포소기관이 없는 세포를 가진 생물로, 세균과 고세균이 포함됨."
     },
     "Ribozymes": {
       "word": "리보자임",
@@ -1185,7 +1185,7 @@
     },
     "Epithelium": {
       "word": "상피",
-      "def": "상피 조직을 참조."
+      "def": "몸의 표면을 덮고 내부 기관 및 공간의 안쪽을 덮으며, 샘을 형성하는 치밀한 세포층으로 이루어진 조직."
     },
     "connective tissue": {
       "word": "결합 조직",
