@@ -1,7 +1,7 @@
 {
   "examData": {
         "midterm": [2023, 2024, 2025, 2026],
-        "final": []                  
+        "final": [2023, 2024, 2025]                  
     },
   "allData": {
     "midterm": {
