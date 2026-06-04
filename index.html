@@ -359,6 +359,7 @@ const GITHUB_BRANCH = "main";
 // 전역 변수
 // ==========================================
 let examData = { midterm: [], final: [] };
+let examFiles = { midterm: {}, final: {} };
 let allData = {};
 let koreanDictionary = {};
 let currentTerm = 'midterm';
@@ -383,6 +384,7 @@ async function loadData() {
         const fetchedData = await response.json();
         
         examData = fetchedData.examData || { midterm: [], final: [] };
+        examFiles = fetchedData.examFiles || { midterm: {}, final: {} };
         allData = fetchedData.allData || {};
         koreanDictionary = fetchedData.koreanDictionary || {};
         data = allData[currentTerm] || {};
@@ -743,50 +745,75 @@ function renderExams() {
     });
 }
 
+function buildPdfUrl(fileName) {
+    return `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodeURIComponent(fileName)}`;
+}
+
+function getPdfFileCandidates(year) {
+    const yearKey = String(year);
+    const mappedName = examFiles[currentTerm]?.[yearKey];
+    const termStr = currentTerm === 'midterm' ? '중간고사' : '기말고사';
+    const generatedName = `${year}년_생명과학개론_${termStr}문제및정답_최종.pdf`;
+
+    const candidates = [];
+    const seen = new Set();
+    const addCandidate = (name) => {
+        if (!name || seen.has(name)) return;
+        seen.add(name);
+        candidates.push(name);
+    };
+
+    addCandidate(mappedName);
+    addCandidate(generatedName.normalize('NFC'));
+    addCandidate(generatedName.normalize('NFD'));
+
+    return candidates;
+}
+
 function openPdf(year, btn) {
     document.querySelectorAll('.exam-year-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
     
     document.getElementById('pdf-wrapper').style.display = 'none';
     document.getElementById('pdf-loading').style.display = 'block';
-    
-    const termStr = currentTerm === 'midterm' ? '중간고사' : '기말고사';
-    const fileName = `${year}년_생명과학개론_${termStr}문제및정답_최종.pdf`;
-    
-    // 1. 일반적인 윈도우/리눅스 방식 (NFC)
-    const nfcFileName = encodeURIComponent(fileName.normalize('NFC'));
-    const nfcUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${nfcFileName}`;
-
-    // 2. 맥(Mac) 자모 분리 방식 (NFD)
-    const nfdFileName = encodeURIComponent(fileName.normalize('NFD'));
-    const nfdUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/${GITHUB_BRANCH}/${nfdFileName}`;
-
+    document.getElementById('pdf-loading').innerHTML = `⏳ PDF 원본을 불러오고 렌더링 중입니다...<br><span style="font-size:0.9rem;font-weight:normal;color:#718096;">(잠시만 기다려주세요)</span>`;
     document.getElementById('pdf-guide').style.display = 'block';
 
-    // 성공 시 실행할 공통 렌더링 함수
-    const loadSuccess = (pdfDoc_) => {
+    const candidates = getPdfFileCandidates(year);
+    let attemptIndex = 0;
+
+    const loadSuccess = (pdfDoc_, fileName) => {
         pdfDoc = pdfDoc_;
         document.getElementById('page-count').textContent = pdfDoc.numPages;
         document.getElementById('pdf-loading').style.display = 'none';
         document.getElementById('pdf-wrapper').style.display = 'block';
+        document.getElementById('pdf-direct-link').href = buildPdfUrl(fileName);
         
         pageNum = 1;
-        currentScale = 'auto'; // 새 PDF를 열 때마다 초기 화면 맞춤
+        currentScale = 'auto';
         renderPage(pageNum);
     };
 
-    // 첫 번째 시도 (NFC 방식)
-    document.getElementById('pdf-direct-link').href = nfcUrl;
-    pdfjsLib.getDocument(nfcUrl).promise.then(loadSuccess).catch(err => {
-        console.warn("NFC 형식 로드 실패, NFD 형식으로 재시도합니다...", err);
-        
-        // 두 번째 시도 (NFD 방식)
-        document.getElementById('pdf-direct-link').href = nfdUrl;
-        pdfjsLib.getDocument(nfdUrl).promise.then(loadSuccess).catch(err2 => {
-            console.error("PDF 로드 최종 실패:", err2);
+    const tryLoadPdf = () => {
+        if (attemptIndex >= candidates.length) {
+            console.error("PDF 로드 최종 실패:", candidates);
             document.getElementById('pdf-loading').innerHTML = `❌ PDF를 불러오지 못했습니다.<br><span style="font-size:0.9rem; font-weight:normal;">파일명이나 깃허브 경로를 확인해주세요.</span>`;
-        });
-    });
+            return;
+        }
+
+        const fileName = candidates[attemptIndex++];
+        const pdfUrl = buildPdfUrl(fileName);
+        document.getElementById('pdf-direct-link').href = pdfUrl;
+
+        pdfjsLib.getDocument(pdfUrl).promise
+            .then(pdfDoc_ => loadSuccess(pdfDoc_, fileName))
+            .catch(err => {
+                console.warn(`PDF 로드 실패 (${fileName}):`, err);
+                tryLoadPdf();
+            });
+    };
+
+    tryLoadPdf();
 }
 
 function renderPage(num) {
