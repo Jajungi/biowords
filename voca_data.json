@@ -12,6 +12,10 @@
       2025
     ]
   },
+  "excludedChapters": {
+    "midterm": [],
+    "final": ["Chapter 19", "Chapter 20"]
+  },
   "examFiles": {
     "midterm": {
       "2023": "2023년_생명과학개론_중간고사문제및정답_최종.pdf",
