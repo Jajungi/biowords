@@ -101,6 +101,31 @@
             position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             transform: translateY(20px); animation: slideUpModal 0.3s forwards;
         }
+        .modal-content.info-modal-wide {
+            max-width: 520px; max-height: 90vh; overflow-y: auto;
+        }
+        .info-section-divider {
+            border: none; border-top: 1px solid #e2e8f0; margin: 22px 0;
+        }
+        .data-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .btn-data {
+            flex: 1 1 auto; min-width: 140px; padding: 10px 14px; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: 700; font-size: 0.88rem; transition: 0.2s;
+        }
+        .btn-export { background: var(--accent); color: white; }
+        .btn-export:hover { filter: brightness(1.05); }
+        .btn-import { background: var(--primary); color: white; }
+        .btn-import-file { background: var(--secondary); color: white; }
+        .import-box label { display: block; font-size: 0.85rem; font-weight: 700; color: #718096; margin: 10px 0 6px; }
+        .import-box select, .import-box textarea {
+            width: 100%; box-sizing: border-box; border: 2px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.9rem; font-family: inherit; background: var(--card-bg); color: var(--text-color);
+        }
+        .import-box textarea { min-height: 110px; padding: 12px; resize: vertical; }
+        .import-box select { padding: 10px; margin-bottom: 4px; }
+        .import-hint { font-size: 0.8rem; color: #718096; line-height: 1.5; margin-top: 8px; }
+        .import-btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .import-btn-row .btn-data { flex: 1; min-width: 120px; }
         .modal-close {
             position: absolute; top: 15px; right: 20px; font-size: 1.5rem; font-weight: bold;
             color: #999; cursor: pointer; border: none; background: none;
@@ -255,7 +280,7 @@
 </nav>
 
 <div id="info-modal" class="modal-overlay" onclick="closeInfo(event)">
-    <div class="modal-content">
+    <div class="modal-content info-modal-wide" onclick="event.stopPropagation()">
         <button class="modal-close" onclick="closeInfo()">&times;</button>
         <h3 style="color: var(--primary); margin-top: 0;">💡 사용 방법 안내</h3>
         <ul>
@@ -266,7 +291,40 @@
             <li><b>❌ Review Note:</b> 틀린 문제들만 모아보고 다시 풀 수 있습니다.</li>
             <li><b>📄 기출문제:</b> 돋보기(+, -) 버튼을 사용해 선명하게 확대/축소하며 볼 수 있습니다.</li>
         </ul>
-        <button class="btn btn-primary" onclick="closeInfo()">확인</button>
+
+        <hr class="info-section-divider">
+        <h3 style="color: var(--primary); margin-bottom: 8px;">📦 데이터 백업 (<span id="info-term-label">중간</span>)</h3>
+        <p style="font-size: 0.9rem; color: #718096; margin: 0 0 14px;">별표·오답 노트를 txt로 보내거나, 붙여넣기/파일로 가져올 수 있습니다.</p>
+
+        <div class="data-actions">
+            <button type="button" class="btn-data btn-export" onclick="exportData('stars')">⭐ 별표보내기</button>
+            <button type="button" class="btn-data btn-export" onclick="exportData('wrongs')">❌ 오답보내기</button>
+            <button type="button" class="btn-data btn-export" onclick="exportData('all')">📥 전체보내기</button>
+        </div>
+
+        <div class="import-box">
+            <label for="import-type">가져오기 대상</label>
+            <select id="import-type">
+                <option value="stars">⭐ Hard Words (별표)</option>
+                <option value="wrongs">❌ Review Note (오답)</option>
+                <option value="all">⭐ + ❌ 전체</option>
+            </select>
+            <label for="import-mode">가져오기 방식</label>
+            <select id="import-mode">
+                <option value="merge">추가 (기존 데이터 유지)</option>
+                <option value="replace">교체 (선택 항목 초기화 후 가져오기)</option>
+            </select>
+            <label for="import-text">붙여넣기</label>
+            <textarea id="import-text" placeholder="보낸 txt 내용을 붙여넣거나, 아래 형식으로 입력하세요.&#10;&#10;Hypothesis | 가설&#10;Gene | 유전자&#10;&#10;또는 영단어만 한 줄에 하나씩 입력"></textarea>
+            <input type="file" id="import-file" accept=".txt,.text" hidden onchange="handleImportFile(event)">
+            <div class="import-btn-row">
+                <button type="button" class="btn-data btn-import-file" onclick="document.getElementById('import-file').click()">📂 파일 선택</button>
+                <button type="button" class="btn-data btn-import" onclick="importData()">📥 가져오기 적용</button>
+            </div>
+            <p class="import-hint">보낸 txt 형식을 그대로 붙여넣으면 자동 인식됩니다. 간단히 <b>영단어 | 한글</b> 형식도 지원합니다.</p>
+        </div>
+
+        <button type="button" class="btn btn-primary info-modal-close-btn" style="margin-top: 20px;" onclick="closeInfo()">확인</button>
     </div>
 </div>
 
@@ -441,6 +499,8 @@ function toggleTerm() {
     renderChapters(); 
     updateReviewCount();
     document.getElementById('nav-star').textContent = `⭐ (${starWords[currentTerm].length})`;
+    const infoTermLabel = document.getElementById('info-term-label');
+    if (infoTermLabel) infoTermLabel.textContent = isFinal ? '기말' : '중간';
     
     if (document.getElementById('star-page').classList.contains('active')) renderStars();
     if (document.getElementById('review-page').classList.contains('active')) updateReviewPage();
@@ -495,9 +555,299 @@ function init() {
     });
 }
 
-function openInfo() { document.getElementById('info-modal').style.display = 'flex'; }
+function getTermKr(term = currentTerm) {
+    return term === 'midterm' ? '중간고사' : '기말고사';
+}
+
+function findWordInData(word, term = currentTerm) {
+    const chapters = allData[term] || {};
+    for (const ch in chapters) {
+        if (chapters[ch][word]) return { chapter: ch, englishDef: chapters[ch][word] };
+    }
+    return null;
+}
+
+function getStudyPair(word) {
+    const found = findWordInData(word);
+    const koWord = getTranslation(word, 'title');
+    const koDef = getTranslation(word, 'def');
+    return {
+        word,
+        englishDef: found ? found.englishDef : '(사전에 없는 단어)',
+        koreanWord: koWord.replace(/\s*\(번역본 없음\)\s*$/, '').trim(),
+        koreanDef: koDef === '한글 풀이가 준비되지 않았습니다.' ? '(한글 풀이 없음)' : koDef,
+        chapter: found ? found.chapter : null
+    };
+}
+
+function formatStudyEntry(index, pair, extraLines = []) {
+    const lines = [
+        '────────────────────────────────────────',
+        `[${index}] ${pair.word}`,
+        '────────────────────────────────────────',
+        `▶ 영어  ${pair.word}`,
+        `▶ 뜻    ${pair.englishDef}`,
+        `▶ 한글  ${pair.koreanWord}`,
+        `▶ 풀이  ${pair.koreanDef}`
+    ];
+    extraLines.forEach(line => lines.push(line));
+    return lines.join('\n');
+}
+
+function buildExportHeader(title, term) {
+    const now = new Date();
+    const dateStr = now.toLocaleString('ko-KR', { hour12: false });
+    return [
+        '============================================================',
+        `BioWords 학습 노트 | ${title} | ${getTermKr(term)}`,
+        `보낸 날짜: ${dateStr}`,
+        '============================================================',
+        ''
+    ].join('\n');
+}
+
+function buildStarsExportText(term = currentTerm) {
+    const words = [...(starWords[term] || [])];
+    if (!words.length) return buildExportHeader('⭐ Hard Words', term) + '(별표된 단어 없음)\n';
+
+    let text = buildExportHeader('⭐ Hard Words', term);
+    words.forEach((word, i) => {
+        text += formatStudyEntry(i + 1, getStudyPair(word)) + '\n\n';
+    });
+    return text.trim() + '\n';
+}
+
+function buildWrongsExportText(term = currentTerm) {
+    const notes = [...(wrongNotes[term] || [])];
+    if (!notes.length) return buildExportHeader('❌ Review Note', term) + '(오답 기록 없음)\n';
+
+    let text = buildExportHeader('❌ Review Note', term);
+    notes.forEach((note, i) => {
+        const pair = getStudyPair(note.a);
+        if (!pair.englishDef || pair.englishDef === '(사전에 없는 단어)') pair.englishDef = note.q;
+        const extra = [
+            note.ch ? `▶ 단원  ${note.ch}` : null,
+            note.u ? `▶ 오답  ${note.u}` : null
+        ].filter(Boolean);
+        text += formatStudyEntry(i + 1, pair, extra) + '\n\n';
+    });
+    return text.trim() + '\n';
+}
+
+function downloadText(filename, content) {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function exportData(type) {
+    const termTag = currentTerm === 'midterm' ? 'midterm' : 'final';
+    const dateTag = new Date().toISOString().slice(0, 10);
+    let content = '';
+    let suffix = '';
+
+    if (type === 'stars') {
+        content = buildStarsExportText();
+        suffix = 'stars';
+    } else if (type === 'wrongs') {
+        content = buildWrongsExportText();
+        suffix = 'wrongs';
+    } else {
+        content = buildStarsExportText() + '\n\n' + buildWrongsExportText();
+        suffix = 'all';
+    }
+
+    downloadText(`biowords_${termTag}_${suffix}_${dateTag}.txt`, content);
+}
+
+function parseImportText(text) {
+    const result = { stars: [], wrongs: [] };
+    const starSet = new Set();
+    const wrongSet = new Set();
+    const lines = text.split(/\r?\n/);
+    let section = null;
+    let pendingWrong = null;
+
+    const addStar = (word) => {
+        const w = word.trim();
+        if (!w || starSet.has(w)) return;
+        starSet.add(w);
+        result.stars.push(w);
+    };
+
+    const addWrong = (word) => {
+        const w = word.trim();
+        if (!w || wrongSet.has(w.toLowerCase())) return;
+        wrongSet.add(w.toLowerCase());
+        const found = findWordInData(w);
+        result.wrongs.push({
+            ch: found ? found.chapter : 'Imported',
+            q: found ? found.englishDef : '(imported)',
+            a: w,
+            u: '(imported)'
+        });
+    };
+
+    for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith('===') || line.startsWith('---') || line.startsWith('BioWords')) continue;
+
+        if (/Hard Words|별표/i.test(line)) { section = 'stars'; continue; }
+        if (/Review Note|오답/i.test(line)) { section = 'wrongs'; continue; }
+
+        const entryMatch = line.match(/^\[\d+\]\s*(.+)$/);
+        if (entryMatch) {
+            const word = entryMatch[1].trim();
+            if (section === 'wrongs') {
+                pendingWrong = word;
+                addWrong(word);
+            } else {
+                addStar(word);
+            }
+            continue;
+        }
+
+        const engMatch = line.match(/^▶\s*영어\s+(.+)$/i);
+        if (engMatch) {
+            const word = engMatch[1].trim();
+            if (section === 'wrongs') { pendingWrong = word; addWrong(word); }
+            else addStar(word);
+            continue;
+        }
+
+        const pipeMatch = line.match(/^([^|｜]+)[|｜]\s*(.+)$/);
+        if (pipeMatch) {
+            const word = pipeMatch[1].trim();
+            if (section === 'wrongs' || /오답|Review/i.test(text)) addWrong(word);
+            else addStar(word);
+            continue;
+        }
+
+        if (/^▶/.test(line)) continue;
+
+        if (/^[A-Za-z]/.test(line) && line.length < 80 && !line.includes(':')) {
+            if (section === 'wrongs') addWrong(line);
+            else if (section === 'stars') addStar(line);
+            else addStar(line);
+        }
+    }
+
+    if (!result.stars.length && !result.wrongs.length) {
+        lines.forEach(rawLine => {
+            const line = rawLine.trim();
+            if (!line) return;
+            const pipeMatch = line.match(/^([^|｜]+)[|｜]\s*(.+)$/);
+            if (pipeMatch) { addStar(pipeMatch[1].trim()); return; }
+            if (/^[A-Za-z]/.test(line) && line.length < 80) addStar(line);
+        });
+    }
+
+    return result;
+}
+
+function applyImport(parsed, importType, importMode) {
+    const term = currentTerm;
+    let starAdded = 0, wrongAdded = 0;
+
+    if (importMode === 'replace') {
+        if (importType === 'stars' || importType === 'all') starWords[term] = [];
+        if (importType === 'wrongs' || importType === 'all') wrongNotes[term] = [];
+    }
+
+    if (importType === 'stars' || importType === 'all') {
+        parsed.stars.forEach(word => {
+            if (!starWords[term].includes(word)) {
+                starWords[term].push(word);
+                starAdded++;
+            }
+        });
+    }
+
+    if (importType === 'wrongs' || importType === 'all') {
+        parsed.wrongs.forEach(note => {
+            if (!wrongNotes[term].some(n => n.a.toLowerCase() === note.a.toLowerCase())) {
+                wrongNotes[term].push(note);
+                wrongAdded++;
+            }
+        });
+    }
+
+    saveToLocal();
+    updateReviewCount();
+    document.getElementById('nav-star').textContent = `⭐ (${starWords[term].length})`;
+    renderChapters();
+    if (document.getElementById('star-page').classList.contains('active')) renderStars();
+    if (document.getElementById('review-page').classList.contains('active')) updateReviewPage();
+
+    return { starAdded, wrongAdded };
+}
+
+function importData() {
+    const text = document.getElementById('import-text').value.trim();
+    if (!text) return alert('붙여넣을 내용을 입력하거나 파일을 선택해주세요.');
+
+    const importType = document.getElementById('import-type').value;
+    const importMode = document.getElementById('import-mode').value;
+
+    if (importMode === 'replace' && !confirm(`${getTermKr()} 데이터를 교체 방식으로 가져올까요?\n선택한 항목의 기존 데이터가 삭제됩니다.`)) return;
+
+    let parsed = parseImportText(text);
+    if (importType === 'wrongs' && !parsed.wrongs.length && parsed.stars.length) {
+        parsed.wrongs = parsed.stars.map(word => {
+            const found = findWordInData(word);
+            return {
+                ch: found ? found.chapter : 'Imported',
+                q: found ? found.englishDef : '(imported)',
+                a: word,
+                u: '(imported)'
+            };
+        });
+    }
+    if (importType === 'stars' && !parsed.stars.length && parsed.wrongs.length) {
+        parsed.stars = parsed.wrongs.map(n => n.a);
+    }
+
+    const { starAdded, wrongAdded } = applyImport(parsed, importType, importMode);
+
+    let msg = `가져오기 완료 (${getTermKr()})\n`;
+    if (importType === 'stars' || importType === 'all') msg += `⭐ 별표: ${starAdded}개 추가 (총 ${starWords[currentTerm].length}개)\n`;
+    if (importType === 'wrongs' || importType === 'all') msg += `❌ 오답: ${wrongAdded}개 추가 (총 ${wrongNotes[currentTerm].length}개)`;
+    if (!starAdded && !wrongAdded) msg = '새로 추가된 항목이 없습니다. 형식을 확인해주세요.';
+
+    alert(msg);
+    document.getElementById('import-text').value = '';
+}
+
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('import-text').value = e.target.result;
+    };
+    reader.readAsText(file, 'UTF-8');
+    event.target.value = '';
+}
+
+function openInfo() {
+    document.getElementById('info-term-label').textContent = currentTerm === 'midterm' ? '중간' : '기말';
+    document.getElementById('info-modal').style.display = 'flex';
+}
+
 function closeInfo(event) {
-    if (!event || event.target.classList.contains('modal-overlay') || event.target.tagName === 'BUTTON') {
+    if (!event) {
+        document.getElementById('info-modal').style.display = 'none';
+        return;
+    }
+    if (event.target.classList.contains('modal-overlay') ||
+        event.target.classList.contains('modal-close') ||
+        event.target.classList.contains('info-modal-close-btn')) {
         document.getElementById('info-modal').style.display = 'none';
     }
 }
